@@ -1,0 +1,123 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+# $Id: level01.txt,v 1.0 2017/04/01 18:55:35 dhn Exp $
+
+0x0) connect to the server via ssh:
+       - host: io.netgarage.org
+       - user:pwd: level1:level1
+
+0x1) get some information
+
+level1@io:/levels$ file level01 
+level01: setuid ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), statically linked, not stripped
+level1@io:/levels$ ./level01
+Enter the 3 digit passcode to enter: 123
+level1@io:/levels$
+
+0x2) use gdb!
+
+level1@io:/levels$ gdb -q level01
+Reading symbols from level01...(no debugging symbols found)...done.
+(gdb) info functions
+All defined functions:
+
+Non-debugging symbols:
+0x08048080  _start
+0x08048080  main
+(gdb)
+
+0x3) set breakpoint and set disassembly-flavor to intel
+
+(gdb) b *main
+Breakpoint 1 at 0x8048080
+(gdb) set disassembly-flavor intel
+
+0x4) disassemble main function
+
+(gdb) disassemble main
+Dump of assembler code for function main:
+   0x08048080 <+0>:	push   0x8049128
+   0x08048085 <+5>:	call   0x804810f
+   0x0804808a <+10>:	call   0x804809f
+   0x0804808f <+15>:	cmp    eax,0x10f
+   0x08048094 <+20>:	je     0x80480dc
+   0x0804809a <+26>:	call   0x8048103
+End of assembler dump.
+(gdb)
+
+0x5) disassemble YouWin function
+
+(gdb) disassemble 0x80480dc
+Dump of assembler code for function YouWin:
+   0x080480dc:	mov    eax,0x4
+   0x080480e1:	mov    ebx,0x1
+   0x080480e6:	mov    ecx,0x804914d
+   0x080480eb:	mov    edx,0x50
+   0x080480f0:	int    0x80
+   0x080480f2:	xor    eax,eax
+   0x080480f4:	mov    ebx,0x804919d
+   0x080480f9:	push   eax
+   0x080480fa:	push   ebx
+   0x080480fb:	mov    ecx,esp
+   0x080480fd:	cdq    
+   0x080480fe:	mov    al,0xb
+   0x08048100:	int    0x80
+   0x08048102:	ret    
+End of assembler dump.
+(gdb)
+
+0x6) the YouWin function start a "/bin/sh"
+
+(gdb) x/s 0x804919d
+0x804919d:	"/bin/sh"<error: Cannot access memory at address 0x80491a4>
+(gdb)
+
+0x7) the goal is to find the right value at 'eax'
+     to jump into the 'YouWin' function and start
+     the shell (/bin/sh)
+
+40    0x0804808f <+15>:>---cmp    eax,0x10f
+                            |      |    |
+                            |      |    |
+                         compare   |    |
+                                 stdin  |
+                                       0x10f
+
+0x8) use gdb to change the presentation of 0x10f to an integer
+
+(gdb) p/d 0x10f
+$3 = 271
+(gdb)
+
+0x9) get the flag/password!
+
+level1@io:/levels$ ./level01
+Enter the 3 digit passcode to enter: 271
+Congrats you found it, now read the password for level2 from /home/level2/.pass
+sh-4.3$ cat /home/level2/.pass
+XNWFtWKWHhaaXoKI
+sh-4.3$
+
+0xa) flag/password for the next level
+
+	XNWFtWKWHhaaXoKI
+
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJY3+CPAAoJEKjdmUcmQRI82EgP/3lER2zmYqPTXGdEYSWx0Fdk
+2TioDPKyAHzu96nzjcavFKNUMZHkkDazmrn8euoqrDOKA7ZLjUFPBA+mhMv6eike
+rJZA33EmwrcbldWh+IKkjf4kue7EPKH1/K4YwVhO5Eaas7mc/huX0q0LQpRiBkDq
+KDfzobysE9sIq+BpejF6cOg9/mgdNe1OlVQNLT4djLb1ugjpwSMzRIcPJY45m6Ty
+c8fbJADXXlyGODF4KrIj7Tly4usIJum75J8eCTPhBmWlY3MR7DPBy7ilT0iwmsHz
+UfQQM/8i0GBFGwHv/g15f/gFsezcU9dBZVwdZvu78Fl1zCh5P1PSkQVHan/IPB7Q
+B5HR0Y6LziRmffsSqNPtPjBfhclYsuRVRydIdpV9j2t8rJ8bhXGJ3spPcNgScWxx
+HUfMTPX9Spws+e2dQo4EB3nIqOckETB61JVjen+MB2sh8vLqquaNWZRUGnSShVsq
+GR8eKYmcqZmfvadaihGuT2qsAtx8kVV+SqPt5W8A5KhA3wPE/RWzenRV/HcBhU8P
++P6eQ0eS68SKwBNWY3upPSQ7P3E03TzMHWiMUevkVyZgft2Cn1P6HsIRxka5fYu4
+bYl01IrtjFv8niSDJbI67cBjGFNtXzh5b0pww2meaAT7nD+jeFusavbomA14w6AP
+pXq6PVXKXlTl0oDOW0YQ
+=7+W1
+-----END PGP SIGNATURE-----
