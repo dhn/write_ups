@@ -1,7 +1,7 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA512
 
-# $Id: level01.txt,v 1.0 2017/04/01 18:55:35 dhn Exp $
+# $Id: level01.txt,v 1.1 2017/04/02 10:21:15 dhn Exp $
 
 0x0) connect to the server via ssh:
        - host: io.netgarage.org
@@ -46,7 +46,7 @@ Dump of assembler code for function main:
 End of assembler dump.
 (gdb)
 
-0x5) disassemble YouWin function
+0x5) disassemble 'YouWin' function
 
 (gdb) disassemble 0x80480dc
 Dump of assembler code for function YouWin:
@@ -67,7 +67,7 @@ Dump of assembler code for function YouWin:
 End of assembler dump.
 (gdb)
 
-0x6) the YouWin function start a "/bin/sh"
+0x6) the 'YouWin' function start a '/bin/sh'
 
 (gdb) x/s 0x804919d
 0x804919d:	"/bin/sh"<error: Cannot access memory at address 0x80491a4>
@@ -84,7 +84,7 @@ End of assembler dump.
                                  stdin  |
                                        0x10f
 
-0x8) use gdb to change the presentation of 0x10f to an integer
+0x8) use gdb to change the presentation of '0x10f' to an integer
 
 (gdb) p/d 0x10f
 $3 = 271
@@ -102,22 +102,20 @@ sh-4.3$
 0xa) flag/password for the next level
 
 	XNWFtWKWHhaaXoKI
-
-
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1
 
-iQIcBAEBCgAGBQJY3+CPAAoJEKjdmUcmQRI82EgP/3lER2zmYqPTXGdEYSWx0Fdk
-2TioDPKyAHzu96nzjcavFKNUMZHkkDazmrn8euoqrDOKA7ZLjUFPBA+mhMv6eike
-rJZA33EmwrcbldWh+IKkjf4kue7EPKH1/K4YwVhO5Eaas7mc/huX0q0LQpRiBkDq
-KDfzobysE9sIq+BpejF6cOg9/mgdNe1OlVQNLT4djLb1ugjpwSMzRIcPJY45m6Ty
-c8fbJADXXlyGODF4KrIj7Tly4usIJum75J8eCTPhBmWlY3MR7DPBy7ilT0iwmsHz
-UfQQM/8i0GBFGwHv/g15f/gFsezcU9dBZVwdZvu78Fl1zCh5P1PSkQVHan/IPB7Q
-B5HR0Y6LziRmffsSqNPtPjBfhclYsuRVRydIdpV9j2t8rJ8bhXGJ3spPcNgScWxx
-HUfMTPX9Spws+e2dQo4EB3nIqOckETB61JVjen+MB2sh8vLqquaNWZRUGnSShVsq
-GR8eKYmcqZmfvadaihGuT2qsAtx8kVV+SqPt5W8A5KhA3wPE/RWzenRV/HcBhU8P
-+P6eQ0eS68SKwBNWY3upPSQ7P3E03TzMHWiMUevkVyZgft2Cn1P6HsIRxka5fYu4
-bYl01IrtjFv8niSDJbI67cBjGFNtXzh5b0pww2meaAT7nD+jeFusavbomA14w6AP
-pXq6PVXKXlTl0oDOW0YQ
-=7+W1
+iQIcBAEBCgAGBQJY4LSsAAoJEKjdmUcmQRI8ypUP/jpsdV1SV+8uWz7uaJ8jUge3
+3oxzu6YMdeQRtj+oBpKpXcW4GYGD+hzULi8fUKvFserY4MZ7Gzfbr79ofJh/xqbh
+esVIzlcppqm49gh6mqGwlhokQPt6SVCkM8HSw3HmDZHEM34CyzbIJvhhbv1cRGsk
+YT4qQKk+Duo3bUDpKwnBOGtS5OX7eM4/mT1v6rB4Yuy0O/rPuiYr8GfT2m1Eu39r
+7LPSPUEOosFJpfZld/uHVn2k/IVVZJy8vCC3KrH1khhaIHSoR6Z897YOJMV0e1X0
+hQEyiF+LeP1Wzb+UALuS+dqH5evtZl+qvsgNQGO+DJqq/9oBezy1TK91fwYPSG8n
+hQ3FhQrvfdBOdihQVuL5DOp/5K4kuU0ZXDxo5PXBpLnQ8k0JcftSNdIb712pOLaa
+hVr6TuXdybNZJNBgnq8wQLpnQpR6Fk4OaqJjfMxf3BBBA42sAvLVJ9lVyskqrJjc
+2TlaNVzb7W+siaxf3UvedNA+VPD9YeFycqb28k/CTdJ7PSxOgzBtrJxxJnjScpzN
+4cO3JVtCktg3+Oc4HnkxByknzHweTFPGKuQYoxGoXojjwHmNKE2eu1lgOUsQLCmC
+Q6GpSnKXgrWvkDUDJ9p28p+25qF2OlcTYB9aD6zxdfi3VL11Q/GsS5avdfBGe8pw
+KUn6KZG5DqwmQ7XWKac8
+=WDrk
 -----END PGP SIGNATURE-----
